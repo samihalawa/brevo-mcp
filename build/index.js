@@ -42,12 +42,30 @@ class BrevoMCPServer {
         this.sendersApi = new brevo.SendersApi();
         this.filesApi = new brevo.FilesApi();
         this.domainsApi = new brevo.DomainsApi();
+        // CRM APIs
+        this.companiesApi = new brevo.CompaniesApi();
+        this.dealsApi = new brevo.DealsApi();
+        this.tasksApi = new brevo.TasksApi();
+        this.notesApi = new brevo.NotesApi();
+        // WhatsApp APIs
+        this.transactionalWhatsAppApi = new brevo.TransactionalWhatsAppApi();
+        this.whatsAppCampaignsApi = new brevo.WhatsAppCampaignsApi();
+        // Additional APIs
+        this.couponsApi = new brevo.CouponsApi();
+        this.paymentsApi = new brevo.PaymentsApi();
+        this.eventsApi = new brevo.EventsApi();
+        this.inboundParsingApi = new brevo.InboundParsingApi();
+        this.masterAccountApi = new brevo.MasterAccountApi();
+        this.userApi = new brevo.UserApi();
         // Set API key for all instances
         const apis = [
             this.contactsApi, this.transactionalEmailsApi, this.emailCampaignsApi,
             this.smsCampaignsApi, this.transactionalSMSApi, this.conversationsApi,
             this.webhooksApi, this.accountApi, this.ecommerceApi, this.sendersApi,
-            this.filesApi, this.domainsApi
+            this.filesApi, this.domainsApi, this.companiesApi, this.dealsApi,
+            this.tasksApi, this.notesApi, this.transactionalWhatsAppApi,
+            this.whatsAppCampaignsApi, this.couponsApi, this.paymentsApi,
+            this.eventsApi, this.inboundParsingApi, this.masterAccountApi, this.userApi
         ];
         apis.forEach(api => {
             const apiKeyAuth = api.authentications['api-key'];
@@ -391,7 +409,7 @@ class BrevoMCPServer {
                     },
                     {
                         name: 'ecommerce',
-                        description: 'E-commerce integration - manage orders, products, track events',
+                        description: 'E-commerce integration - manage orders, products, coupons, and payments',
                         inputSchema: {
                             type: 'object',
                             properties: {
@@ -400,7 +418,10 @@ class BrevoMCPServer {
                                     enum: [
                                         'create_order', 'get_order', 'get_orders', 'update_order',
                                         'get_products', 'create_product', 'update_product', 'delete_product',
-                                        'get_categories', 'create_category', 'update_category', 'delete_category'
+                                        'get_categories', 'create_category', 'update_category', 'delete_category',
+                                        'get_coupon_collections', 'get_coupon_collection', 'create_coupon_collection',
+                                        'update_coupon_collection', 'create_coupons', 'create_payment_request',
+                                        'get_payment_request', 'delete_payment_request'
                                     ],
                                     description: 'E-commerce operation to perform',
                                 },
@@ -427,6 +448,269 @@ class BrevoMCPServer {
                                 categoryData: {
                                     type: 'object',
                                     description: 'Category information',
+                                },
+                                couponCollectionId: {
+                                    type: 'string',
+                                    description: 'Coupon collection ID',
+                                },
+                                couponData: {
+                                    type: 'object',
+                                    description: 'Coupon collection data',
+                                },
+                                paymentData: {
+                                    type: 'object',
+                                    description: 'Payment request data',
+                                },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Number of items to retrieve',
+                                    default: 50,
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                    default: 0,
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'crm',
+                        description: 'Complete CRM functionality - manage companies, deals, tasks, and notes',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'get_companies', 'get_company', 'create_company', 'update_company', 'delete_company',
+                                        'link_unlink_company', 'get_company_attributes',
+                                        'get_deals', 'get_deal', 'create_deal', 'update_deal', 'delete_deal',
+                                        'link_unlink_deal', 'get_deal_attributes', 'get_pipelines',
+                                        'get_tasks', 'get_task', 'create_task', 'update_task', 'delete_task',
+                                        'get_task_types', 'get_notes', 'get_note', 'create_note', 'update_note', 'delete_note'
+                                    ],
+                                    description: 'CRM operation to perform',
+                                },
+                                companyId: {
+                                    type: 'string',
+                                    description: 'Company ID',
+                                },
+                                companyData: {
+                                    type: 'object',
+                                    description: 'Company information',
+                                },
+                                dealId: {
+                                    type: 'string',
+                                    description: 'Deal ID',
+                                },
+                                dealData: {
+                                    type: 'object',
+                                    description: 'Deal information',
+                                },
+                                taskId: {
+                                    type: 'string',
+                                    description: 'Task ID',
+                                },
+                                taskData: {
+                                    type: 'object',
+                                    description: 'Task information',
+                                },
+                                noteId: {
+                                    type: 'string',
+                                    description: 'Note ID',
+                                },
+                                noteData: {
+                                    type: 'object',
+                                    description: 'Note information',
+                                },
+                                entityType: {
+                                    type: 'string',
+                                    enum: ['companies', 'deals', 'contacts'],
+                                    description: 'Entity type for linking/notes',
+                                },
+                                entityId: {
+                                    type: 'string',
+                                    description: 'Entity ID for linking/notes',
+                                },
+                                filters: {
+                                    type: 'object',
+                                    description: 'Filters for listing operations',
+                                },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Number of items to retrieve',
+                                    default: 50,
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                    default: 0,
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'whatsapp',
+                        description: 'WhatsApp messaging - send messages, manage campaigns and templates',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'send_message', 'get_whatsapp_events',
+                                        'get_whatsapp_campaigns', 'get_whatsapp_campaign', 'create_whatsapp_campaign',
+                                        'update_whatsapp_campaign', 'delete_whatsapp_campaign',
+                                        'get_whatsapp_templates', 'create_whatsapp_template', 'get_whatsapp_config'
+                                    ],
+                                    description: 'WhatsApp operation to perform',
+                                },
+                                recipient: {
+                                    type: 'string',
+                                    description: 'WhatsApp number for single message',
+                                },
+                                templateId: {
+                                    type: 'number',
+                                    description: 'WhatsApp template ID',
+                                },
+                                templateData: {
+                                    type: 'object',
+                                    description: 'Template data and parameters',
+                                },
+                                campaignId: {
+                                    type: 'number',
+                                    description: 'WhatsApp campaign ID',
+                                },
+                                campaignData: {
+                                    type: 'object',
+                                    description: 'Campaign configuration data',
+                                },
+                                messageId: {
+                                    type: 'string',
+                                    description: 'Message ID for event tracking',
+                                },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Number of items to retrieve',
+                                    default: 50,
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                    default: 0,
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'events',
+                        description: 'Custom event tracking and behavioral data management',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: ['create_event'],
+                                    description: 'Event operation to perform',
+                                },
+                                email: {
+                                    type: 'string',
+                                    description: 'Contact email for event tracking',
+                                },
+                                eventName: {
+                                    type: 'string',
+                                    description: 'Name of the event to track',
+                                },
+                                eventData: {
+                                    type: 'object',
+                                    description: 'Event properties and data',
+                                },
+                            },
+                            required: ['operation', 'email', 'eventName'],
+                        },
+                    },
+                    {
+                        name: 'inbound',
+                        description: 'Process inbound emails and attachments',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'get_inbound_email_events', 'get_inbound_email_by_uuid',
+                                        'get_inbound_email_attachment'
+                                    ],
+                                    description: 'Inbound parsing operation to perform',
+                                },
+                                uuid: {
+                                    type: 'string',
+                                    description: 'Email UUID for specific email operations',
+                                },
+                                attachmentId: {
+                                    type: 'string',
+                                    description: 'Attachment ID for download',
+                                },
+                                sender: {
+                                    type: 'string',
+                                    description: 'Sender email filter',
+                                },
+                                startDate: {
+                                    type: 'string',
+                                    description: 'Start date for filtering (YYYY-MM-DD)',
+                                },
+                                endDate: {
+                                    type: 'string',
+                                    description: 'End date for filtering (YYYY-MM-DD)',
+                                },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Number of items to retrieve',
+                                    default: 50,
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                    default: 0,
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'enterprise',
+                        description: 'Multi-tenant account and user management for enterprise features',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'get_master_account', 'get_sub_accounts', 'create_sub_account',
+                                        'get_sub_account', 'delete_sub_account', 'create_api_key',
+                                        'get_invited_users', 'edit_user_permission', 'get_user_permission'
+                                    ],
+                                    description: 'Enterprise operation to perform',
+                                },
+                                subAccountId: {
+                                    type: 'number',
+                                    description: 'Sub-account ID',
+                                },
+                                subAccountData: {
+                                    type: 'object',
+                                    description: 'Sub-account configuration data',
+                                },
+                                userId: {
+                                    type: 'string',
+                                    description: 'User ID for permission operations',
+                                },
+                                permissions: {
+                                    type: 'object',
+                                    description: 'User permission settings',
                                 },
                                 limit: {
                                     type: 'number',
@@ -465,6 +749,16 @@ class BrevoMCPServer {
                         return await this.handleAccount(args);
                     case 'ecommerce':
                         return await this.handleEcommerce(args);
+                    case 'crm':
+                        return await this.handleCRM(args);
+                    case 'whatsapp':
+                        return await this.handleWhatsApp(args);
+                    case 'events':
+                        return await this.handleEvents(args);
+                    case 'inbound':
+                        return await this.handleInbound(args);
+                    case 'enterprise':
+                        return await this.handleEnterprise(args);
                     default:
                         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
                 }
@@ -731,8 +1025,351 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: `Order created: ${JSON.stringify(newOrder.body, null, 2)}` }]
                 };
+            // Coupon operations
+            case 'get_coupon_collections':
+                const collections = await this.couponsApi.getCouponCollections({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(collections.body, null, 2) }]
+                };
+            case 'get_coupon_collection':
+                const collection = await this.couponsApi.getCouponCollection(args.couponCollectionId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(collection.body, null, 2) }]
+                };
+            case 'create_coupon_collection':
+                const createCouponCollection = new brevo.CreateCouponCollectionRequest();
+                Object.assign(createCouponCollection, args.couponData);
+                const newCollection = await this.couponsApi.createCouponCollection(createCouponCollection);
+                return {
+                    content: [{ type: 'text', text: `Coupon collection created: ${JSON.stringify(newCollection.body, null, 2)}` }]
+                };
+            case 'create_coupons':
+                const createCoupons = new brevo.CreateCouponsRequest();
+                Object.assign(createCoupons, args.couponData);
+                const coupons = await this.couponsApi.createCoupons(createCoupons);
+                return {
+                    content: [{ type: 'text', text: `Coupons created: ${JSON.stringify(coupons.body, null, 2)}` }]
+                };
+            // Payment operations
+            case 'create_payment_request':
+                const paymentRequest = new brevo.CreatePaymentRequest();
+                Object.assign(paymentRequest, args.paymentData);
+                const payment = await this.paymentsApi.createPaymentRequest(paymentRequest);
+                return {
+                    content: [{ type: 'text', text: `Payment request created: ${JSON.stringify(payment.body, null, 2)}` }]
+                };
+            case 'get_payment_request':
+                const paymentDetails = await this.paymentsApi.getPaymentRequest(args.paymentId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(paymentDetails.body, null, 2) }]
+                };
             default:
                 throw new Error(`Unknown e-commerce operation: ${operation}`);
+        }
+    }
+    // CRM operations handler
+    async handleCRM(args) {
+        const { operation } = args;
+        switch (operation) {
+            // Company operations
+            case 'get_companies':
+                const companies = await this.companiesApi.getCompanies({
+                    filters: args.filters,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(companies.body, null, 2) }]
+                };
+            case 'get_company':
+                const company = await this.companiesApi.getCompaniesId(args.companyId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(company.body, null, 2) }]
+                };
+            case 'create_company':
+                const createCompany = new brevo.CompaniesPostRequest();
+                Object.assign(createCompany, args.companyData);
+                const newCompany = await this.companiesApi.companiesPost(createCompany);
+                return {
+                    content: [{ type: 'text', text: `Company created with ID: ${newCompany.body.id}` }]
+                };
+            case 'update_company':
+                const updateCompany = new brevo.CompaniesIdPatchRequest();
+                Object.assign(updateCompany, args.companyData);
+                await this.companiesApi.companiesIdPatch(args.companyId, updateCompany);
+                return {
+                    content: [{ type: 'text', text: `Company ${args.companyId} updated successfully` }]
+                };
+            case 'delete_company':
+                await this.companiesApi.companiesIdDelete(args.companyId);
+                return {
+                    content: [{ type: 'text', text: `Company ${args.companyId} deleted successfully` }]
+                };
+            // Deal operations
+            case 'get_deals':
+                const deals = await this.dealsApi.getDeals({
+                    filters: args.filters,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(deals.body, null, 2) }]
+                };
+            case 'get_deal':
+                const deal = await this.dealsApi.getDealsId(args.dealId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(deal.body, null, 2) }]
+                };
+            case 'create_deal':
+                const createDeal = new brevo.CrmDealsPostRequest();
+                Object.assign(createDeal, args.dealData);
+                const newDeal = await this.dealsApi.dealsPost(createDeal);
+                return {
+                    content: [{ type: 'text', text: `Deal created with ID: ${newDeal.body.id}` }]
+                };
+            case 'update_deal':
+                const updateDeal = new brevo.CrmDealsIdPatchRequest();
+                Object.assign(updateDeal, args.dealData);
+                await this.dealsApi.dealsIdPatch(args.dealId, updateDeal);
+                return {
+                    content: [{ type: 'text', text: `Deal ${args.dealId} updated successfully` }]
+                };
+            case 'delete_deal':
+                await this.dealsApi.dealsIdDelete(args.dealId);
+                return {
+                    content: [{ type: 'text', text: `Deal ${args.dealId} deleted successfully` }]
+                };
+            // Task operations
+            case 'get_tasks':
+                const tasks = await this.tasksApi.getTasks({
+                    filters: args.filters,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(tasks.body, null, 2) }]
+                };
+            case 'get_task':
+                const task = await this.tasksApi.getTasksId(args.taskId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(task.body, null, 2) }]
+                };
+            case 'create_task':
+                const createTask = new brevo.CrmTasksPostRequest();
+                Object.assign(createTask, args.taskData);
+                const newTask = await this.tasksApi.tasksPost(createTask);
+                return {
+                    content: [{ type: 'text', text: `Task created with ID: ${newTask.body.id}` }]
+                };
+            case 'update_task':
+                const updateTask = new brevo.CrmTasksIdPatchRequest();
+                Object.assign(updateTask, args.taskData);
+                await this.tasksApi.tasksIdPatch(args.taskId, updateTask);
+                return {
+                    content: [{ type: 'text', text: `Task ${args.taskId} updated successfully` }]
+                };
+            case 'delete_task':
+                await this.tasksApi.tasksIdDelete(args.taskId);
+                return {
+                    content: [{ type: 'text', text: `Task ${args.taskId} deleted successfully` }]
+                };
+            // Note operations
+            case 'get_notes':
+                const notes = await this.notesApi.getNotes({
+                    entityType: args.entityType,
+                    entityId: args.entityId,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(notes.body, null, 2) }]
+                };
+            case 'get_note':
+                const note = await this.notesApi.getNotesId(args.noteId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(note.body, null, 2) }]
+                };
+            case 'create_note':
+                const createNote = new brevo.Note();
+                Object.assign(createNote, args.noteData);
+                const newNote = await this.notesApi.notesPost(createNote);
+                return {
+                    content: [{ type: 'text', text: `Note created with ID: ${newNote.body.id}` }]
+                };
+            case 'update_note':
+                const updateNote = new brevo.Note();
+                Object.assign(updateNote, args.noteData);
+                await this.notesApi.notesIdPatch(args.noteId, updateNote);
+                return {
+                    content: [{ type: 'text', text: `Note ${args.noteId} updated successfully` }]
+                };
+            case 'delete_note':
+                await this.notesApi.notesIdDelete(args.noteId);
+                return {
+                    content: [{ type: 'text', text: `Note ${args.noteId} deleted successfully` }]
+                };
+            default:
+                throw new Error(`Unknown CRM operation: ${operation}`);
+        }
+    }
+    // WhatsApp operations handler
+    async handleWhatsApp(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'send_message':
+                const sendWhatsAppMessage = new brevo.SendWhatsappMessage();
+                sendWhatsAppMessage.contactNumbers = [args.recipient];
+                Object.assign(sendWhatsAppMessage, args.templateData);
+                const messageResult = await this.transactionalWhatsAppApi.sendWhatsAppMessage(sendWhatsAppMessage);
+                return {
+                    content: [{ type: 'text', text: `WhatsApp message sent: ${JSON.stringify(messageResult.body, null, 2)}` }]
+                };
+            case 'get_whatsapp_campaigns':
+                const whatsappCampaigns = await this.whatsAppCampaignsApi.getWhatsAppCampaigns({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(whatsappCampaigns.body, null, 2) }]
+                };
+            case 'get_whatsapp_campaign':
+                const campaign = await this.whatsAppCampaignsApi.getWhatsAppCampaign(args.campaignId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(campaign.body, null, 2) }]
+                };
+            case 'create_whatsapp_campaign':
+                const createCampaign = new brevo.CreateWhatsAppCampaign();
+                Object.assign(createCampaign, args.campaignData);
+                const newCampaign = await this.whatsAppCampaignsApi.createWhatsAppCampaign(createCampaign);
+                return {
+                    content: [{ type: 'text', text: `WhatsApp campaign created with ID: ${newCampaign.body.id}` }]
+                };
+            case 'update_whatsapp_campaign':
+                const updateCampaign = new brevo.UpdateWhatsAppCampaign();
+                Object.assign(updateCampaign, args.campaignData);
+                await this.whatsAppCampaignsApi.updateWhatsAppCampaign(args.campaignId, updateCampaign);
+                return {
+                    content: [{ type: 'text', text: `WhatsApp campaign ${args.campaignId} updated successfully` }]
+                };
+            case 'delete_whatsapp_campaign':
+                await this.whatsAppCampaignsApi.deleteWhatsAppCampaign(args.campaignId);
+                return {
+                    content: [{ type: 'text', text: `WhatsApp campaign ${args.campaignId} deleted successfully` }]
+                };
+            case 'get_whatsapp_templates':
+                const templates = await this.whatsAppCampaignsApi.getWhatsAppTemplates({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(templates.body, null, 2) }]
+                };
+            default:
+                throw new Error(`Unknown WhatsApp operation: ${operation}`);
+        }
+    }
+    // Events operations handler
+    async handleEvents(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'create_event':
+                const createEvent = new brevo.Event();
+                createEvent.identifiers = { emailId: args.email };
+                createEvent.eventName = args.eventName;
+                Object.assign(createEvent, args.eventData);
+                const eventResult = await this.eventsApi.createEvent(createEvent);
+                return {
+                    content: [{ type: 'text', text: `Event created: ${JSON.stringify(eventResult.body, null, 2)}` }]
+                };
+            default:
+                throw new Error(`Unknown events operation: ${operation}`);
+        }
+    }
+    // Inbound parsing operations handler
+    async handleInbound(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_inbound_email_events':
+                const events = await this.inboundParsingApi.getInboundEmailEvents({
+                    sender: args.sender,
+                    startDate: args.startDate,
+                    endDate: args.endDate,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(events.body, null, 2) }]
+                };
+            case 'get_inbound_email_by_uuid':
+                const email = await this.inboundParsingApi.getInboundEmailEventsByUuid(args.uuid);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(email.body, null, 2) }]
+                };
+            case 'get_inbound_email_attachment':
+                const attachment = await this.inboundParsingApi.getInboundEmailAttachment(args.uuid, args.attachmentId);
+                return {
+                    content: [{ type: 'text', text: `Attachment downloaded: ${JSON.stringify(attachment.body, null, 2)}` }]
+                };
+            default:
+                throw new Error(`Unknown inbound operation: ${operation}`);
+        }
+    }
+    // Enterprise operations handler
+    async handleEnterprise(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_master_account':
+                const masterAccount = await this.masterAccountApi.getMasterAccount();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(masterAccount.body, null, 2) }]
+                };
+            case 'get_sub_accounts':
+                const subAccounts = await this.masterAccountApi.getSubAccounts({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(subAccounts.body, null, 2) }]
+                };
+            case 'create_sub_account':
+                const createSubAccount = new brevo.CreateSubAccount();
+                Object.assign(createSubAccount, args.subAccountData);
+                const newSubAccount = await this.masterAccountApi.createSubAccount(createSubAccount);
+                return {
+                    content: [{ type: 'text', text: `Sub-account created: ${JSON.stringify(newSubAccount.body, null, 2)}` }]
+                };
+            case 'get_sub_account':
+                const subAccount = await this.masterAccountApi.getSubAccountDetails(args.subAccountId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(subAccount.body, null, 2) }]
+                };
+            case 'delete_sub_account':
+                await this.masterAccountApi.deleteSubAccount(args.subAccountId);
+                return {
+                    content: [{ type: 'text', text: `Sub-account ${args.subAccountId} deleted successfully` }]
+                };
+            case 'get_invited_users':
+                const invitedUsers = await this.userApi.getInvitedUsers();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(invitedUsers.body, null, 2) }]
+                };
+            case 'get_user_permission':
+                const userPermission = await this.userApi.getUserPermission(args.userId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(userPermission.body, null, 2) }]
+                };
+            case 'edit_user_permission':
+                const editPermission = new brevo.InviteAdminUser();
+                Object.assign(editPermission, args.permissions);
+                await this.userApi.editUserPermission(args.userId, editPermission);
+                return {
+                    content: [{ type: 'text', text: `User ${args.userId} permissions updated successfully` }]
+                };
+            default:
+                throw new Error(`Unknown enterprise operation: ${operation}`);
         }
     }
     async run() {
