@@ -2,13 +2,28 @@
   "name": "brevo-mcp",
   "version": "1.0.0",
   "description": "Multi-Channel Platform (MCP) for Brevo API integration with Claude",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "brevo-mcp": "build/index.js",
+    "brevo-mcp-smithery": "scripts/start-smithery.js"
+  },
   "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "lint": "eslint src/**/*.ts",
-    "prepublish": "npm run build"
+    "build": "tsc && shx chmod +x build/index.js",
+    "start": "node build/index.js",
+    "prepare": "npm run build",
+    "dev": "npm run build && npm start",
+    "watch": "tsc --watch",
+    "test": "node scripts/test-mcp.js",
+    "test:server": "concurrently \"npm run start\" \"sleep 3 && npm run test\"",
+    "smithery": "node scripts/run-with-smithery.js",
+    "smithery:install": "./scripts/smithery-install.sh",
+    "smithery:run": "./scripts/smithery-run.sh",
+    "smithery:publish": "./scripts/publish-to-smithery.sh",
+    "deploy:npm": "./scripts/mcp-deploy.sh npm",
+    "deploy:docker": "./scripts/mcp-deploy.sh docker",
+    "deploy:all": "./scripts/mcp-deploy.sh all",
+    "install:local": "./scripts/install-local-mcp.sh"
   },
   "repository": {
     "type": "git",
@@ -21,7 +36,13 @@
     "api",
     "claude",
     "mcp",
-    "typescript"
+    "modelcontextprotocol",
+    "typescript",
+    "ai",
+    "automation",
+    "email-marketing",
+    "contact-management",
+    "smithery"
   ],
   "author": "Antoine Picolet",
   "license": "MIT",
@@ -30,16 +51,27 @@
   },
   "homepage": "https://github.com/apicolet/brevo-mcp#readme",
   "devDependencies": {
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.17",
-    "@typescript-eslint/eslint-plugin": "^7.0.1",
-    "@typescript-eslint/parser": "^7.0.1",
-    "eslint": "^8.56.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3"
+    "@types/node": "^18.0.0",
+    "@types/node-fetch": "^2.6.4",
+    "concurrently": "9.1.2",
+    "shx": "^0.3.4",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
+    "@modelcontextprotocol/sdk": "^1.4.1",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.22.4"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
 }

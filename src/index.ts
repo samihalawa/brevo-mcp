@@ -1,3 +1,13 @@
+#!/usr/bin/env node
+
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ErrorCode,
+  ListToolsRequestSchema,
+  McpError,
+} from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
 
 // Types
@@ -27,7 +37,7 @@ export interface ContactAttribute {
   value?: string;
 }
 
-export class BrevoMCP {
+export class BrevoAPI {
   private apiKey: string;
   private defaultSender: { name: string; email: string };
   private baseUrl = 'https://api.brevo.com/v3';
@@ -66,7 +76,7 @@ export class BrevoMCP {
     const endpoint = typeof identifier === 'number' 
       ? `/contacts/${identifier}`
       : `/contacts/${encodeURIComponent(identifier)}`;
-    return this.makeRequest(endpoint);
+    return this.makeRequest(endpoint) as Promise<BrevoContact>;
   }
 
   async updateContact(id: number, data: Partial<BrevoContact>): Promise<void> {
@@ -78,7 +88,7 @@ export class BrevoMCP {
   }
 
   async getAttributes(): Promise<ContactAttribute[]> {
-    const response = await this.makeRequest('/contacts/attributes');
+    const response = await this.makeRequest('/contacts/attributes') as any;
     return response.attributes;
   }
 
@@ -88,7 +98,7 @@ export class BrevoMCP {
       ...options,
       sender: options.sender || this.defaultSender
     };
-    return this.makeRequest('/smtp/email', 'POST', emailData);
+    return this.makeRequest('/smtp/email', 'POST', emailData) as Promise<{ messageId: string }>;
   }
 
   async getEmailEvents(messageId?: string, email?: string): Promise<any[]> {
@@ -102,7 +112,7 @@ export class BrevoMCP {
       endpoint += `?${params.join('&')}`;
     }
     
-    const response = await this.makeRequest(endpoint);
+    const response = await this.makeRequest(endpoint) as any;
     return response.events;
   }
 
@@ -175,4 +185,420 @@ export class BrevoMCP {
   }
 }
 
-export default BrevoMCP;
+// MCP Server Implementation
+class BrevoMCPServer {
+  private server: Server;
+  private brevoAPI: BrevoAPI | null = null;
+
+  constructor() {
+    this.server = new Server(
+      {
+        name: 'brevo-mcp',
+        version: '1.0.0',
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    );
+
+    this.setupToolHandlers();
+    this.setupErrorHandling();
+  }
+
+  private setupErrorHandling(): void {
+    this.server.onerror = (error) => {
+      console.error('[MCP Error]', error);
+    };
+
+    process.on('SIGINT', async () => {
+      await this.server.close();
+      process.exit(0);
+    });
+  }
+
+  private setupToolHandlers(): void {
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      return {
+        tools: [
+          {
+            name: 'initialize_brevo',
+            description: 'Initialize Brevo API connection with API key and default sender',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                apiKey: {
+                  type: 'string',
+                  description: 'Your Brevo API key',
+                },
+                defaultSenderEmail: {
+                  type: 'string',
+                  description: 'Default sender email address',
+                },
+                defaultSenderName: {
+                  type: 'string',
+                  description: 'Default sender name',
+                },
+              },
+              required: ['apiKey', 'defaultSenderEmail'],
+            },
+          },
+          {
+            name: 'send_email',
+            description: 'Send an email using Brevo API',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                to: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      email: { type: 'string' },
+                      name: { type: 'string' },
+                    },
+                    required: ['email'],
+                  },
+                  description: 'Recipients list',
+                },
+                subject: {
+                  type: 'string',
+                  description: 'Email subject',
+                },
+                htmlContent: {
+                  type: 'string',
+                  description: 'HTML content of the email',
+                },
+                sender: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string' },
+                    name: { type: 'string' },
+                  },
+                  description: 'Override default sender (optional)',
+                },
+              },
+              required: ['to', 'subject', 'htmlContent'],
+            },
+          },
+          {
+            name: 'get_contact',
+            description: 'Get contact information by email or ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                identifier: {
+                  oneOf: [
+                    { type: 'string' },
+                    { type: 'number' },
+                  ],
+                  description: 'Contact email or ID',
+                },
+              },
+              required: ['identifier'],
+            },
+          },
+          {
+            name: 'update_contact',
+            description: 'Update contact information',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'number',
+                  description: 'Contact ID',
+                },
+                data: {
+                  type: 'object',
+                  description: 'Contact data to update',
+                },
+              },
+              required: ['id', 'data'],
+            },
+          },
+          {
+            name: 'create_attribute',
+            description: 'Create a new contact attribute',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Attribute name',
+                },
+                type: {
+                  type: 'string',
+                  enum: ['text', 'date', 'float', 'boolean'],
+                  description: 'Attribute type',
+                  default: 'text',
+                },
+              },
+              required: ['name'],
+            },
+          },
+          {
+            name: 'get_attributes',
+            description: 'Get all contact attributes',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+            },
+          },
+          {
+            name: 'get_email_events',
+            description: 'Get email events for tracking',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                messageId: {
+                  type: 'string',
+                  description: 'Message ID to filter events',
+                },
+                email: {
+                  type: 'string',
+                  description: 'Email address to filter events',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_senders',
+            description: 'Get all verified senders',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+            },
+          },
+          {
+            name: 'create_beautiful_email',
+            description: 'Create a beautiful HTML email using default template',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                title: {
+                  type: 'string',
+                  description: 'Email title for header',
+                },
+                content: {
+                  type: 'string',
+                  description: 'Email content (can include HTML)',
+                },
+                accentColor: {
+                  type: 'string',
+                  description: 'Accent color for the template (hex code)',
+                  default: '#667eea',
+                },
+                senderName: {
+                  type: 'string',
+                  description: 'Sender name for signature',
+                },
+                senderTitle: {
+                  type: 'string',
+                  description: 'Sender title for signature',
+                },
+                extraInfo: {
+                  type: 'string',
+                  description: 'Extra info for signature',
+                },
+              },
+              required: ['title', 'content'],
+            },
+          },
+        ],
+      };
+    });
+
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+
+      try {
+        switch (name) {
+          case 'initialize_brevo':
+            return await this.handleInitializeBrevo(args);
+          case 'send_email':
+            return await this.handleSendEmail(args);
+          case 'get_contact':
+            return await this.handleGetContact(args);
+          case 'update_contact':
+            return await this.handleUpdateContact(args);
+          case 'create_attribute':
+            return await this.handleCreateAttribute(args);
+          case 'get_attributes':
+            return await this.handleGetAttributes();
+          case 'get_email_events':
+            return await this.handleGetEmailEvents(args);
+          case 'get_senders':
+            return await this.handleGetSenders();
+          case 'create_beautiful_email':
+            return await this.handleCreateBeautifulEmail(args);
+          default:
+            throw new McpError(
+              ErrorCode.MethodNotFound,
+              `Unknown tool: ${name}`
+            );
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Error executing ${name}: ${errorMessage}`
+        );
+      }
+    });
+  }
+
+  private ensureInitialized(): void {
+    if (!this.brevoAPI) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Brevo API not initialized. Please call initialize_brevo first.'
+      );
+    }
+  }
+
+  private async handleInitializeBrevo(args: any) {
+    const { apiKey, defaultSenderEmail, defaultSenderName } = args;
+    
+    this.brevoAPI = new BrevoAPI(apiKey, defaultSenderEmail, defaultSenderName);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Brevo API initialized successfully with sender: ${defaultSenderEmail}`,
+        },
+      ],
+    };
+  }
+
+  private async handleSendEmail(args: any) {
+    this.ensureInitialized();
+    const result = await this.brevoAPI!.sendEmail(args);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Email sent successfully. Message ID: ${result.messageId}`,
+        },
+      ],
+    };
+  }
+
+  private async handleGetContact(args: any) {
+    this.ensureInitialized();
+    const contact = await this.brevoAPI!.getContact(args.identifier);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(contact, null, 2),
+        },
+      ],
+    };
+  }
+
+  private async handleUpdateContact(args: any) {
+    this.ensureInitialized();
+    await this.brevoAPI!.updateContact(args.id, args.data);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Contact ${args.id} updated successfully`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateAttribute(args: any) {
+    this.ensureInitialized();
+    await this.brevoAPI!.createAttribute(args.name, args.type || 'text');
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Attribute '${args.name}' created successfully`,
+        },
+      ],
+    };
+  }
+
+  private async handleGetAttributes() {
+    this.ensureInitialized();
+    const attributes = await this.brevoAPI!.getAttributes();
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(attributes, null, 2),
+        },
+      ],
+    };
+  }
+
+  private async handleGetEmailEvents(args: any) {
+    this.ensureInitialized();
+    const events = await this.brevoAPI!.getEmailEvents(args.messageId, args.email);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(events, null, 2),
+        },
+      ],
+    };
+  }
+
+  private async handleGetSenders() {
+    this.ensureInitialized();
+    const senders = await this.brevoAPI!.getSenders();
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(senders, null, 2),
+        },
+      ],
+    };
+  }
+
+  private async handleCreateBeautifulEmail(args: any) {
+    const { title, content, accentColor = '#667eea', senderName, senderTitle, extraInfo } = args;
+    
+    let htmlContent = BrevoAPI.getDefaultTemplate(title, content, accentColor);
+    
+    if (senderName) {
+      const signature = BrevoAPI.formatEmailSignature(senderName, senderTitle, extraInfo);
+      htmlContent = htmlContent.replace('</div>', `${signature}</div>`);
+    }
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Beautiful email template created! Use this HTML content in the send_email tool:\n\n${htmlContent}`,
+        },
+      ],
+    };
+  }
+
+  async run(): Promise<void> {
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    console.error('Brevo MCP server running on stdio');
+  }
+}
+
+// Start the server
+const server = new BrevoMCPServer();
+server.run().catch(console.error);
+
+export default BrevoAPI;

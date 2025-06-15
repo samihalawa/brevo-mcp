@@ -1,143 +1,228 @@
-# Brevo MCP (Multi-Channel Platform)
+# Brevo MCP Server
 
-A TypeScript library for integrating Brevo (formerly Sendinblue) API with Claude and other applications. This MCP provides easy-to-use functions for managing contacts, sending transactional emails, and tracking email events.
+📧 **Multi-Channel Platform (MCP) for Brevo API integration with Claude & Smithery**
 
-## Features
+A powerful MCP server that enables Claude to interact with the Brevo email platform for sending emails, managing contacts, and tracking email events.
 
-- 📧 Transactional Email Management
-  - Send beautiful HTML emails
-  - Track email events (delivery, opens, clicks)
-  - Pre-built email templates
-  
-- 👥 Contact Management
-  - Create and update contacts
-  - Manage custom attributes
-  - Retrieve contact information
-  
-- 🎨 Beautiful Email Templates
-  - Gradient headers
-  - Modern design
-  - Customizable styles
+## ✨ Features
 
-## Installation
+- 🔧 **Complete Brevo API Integration** - Send emails, manage contacts, track events
+- 🎨 **Beautiful Email Templates** - Pre-built responsive HTML templates
+- 🛡️ **Type-Safe** - Full TypeScript support with comprehensive type definitions
+- 🚀 **Smithery Compatible** - Ready for Smithery deployment and management
+- 🔌 **MCP Protocol** - Standard Model Context Protocol implementation
+- 📊 **Contact Management** - Create, update, and retrieve contact information
+- 📈 **Email Tracking** - Monitor email delivery, opens, clicks, and more
 
-```bash
-npm install brevo-mcp
-```
+## 🚀 Quick Start
 
-## Configuration in Claude Desktop
+### Option 1: Using Smithery (Recommended)
 
-To use this MCP in Claude Desktop conversations, follow these steps:
-
-1. Install the package in your Claude Desktop configuration directory:
+1. **Install via Smithery:**
    ```bash
-   cd ~/.claude/functions
+   # Add to your Smithery configuration
    npm install brevo-mcp
    ```
 
-2. Create a configuration file (if not exists):
+2. **Configure in smithery.yaml:**
+   ```yaml
+   brevo-mcp:
+     apiKey: "your-brevo-api-key"
+     defaultSenderEmail: "your-email@domain.com"
+     defaultSenderName: "Your Name"
+   ```
+
+### Option 2: Local Installation
+
+1. **Clone and Install:**
    ```bash
-   touch ~/.claude/config.json
+   git clone <repository-url>
+   cd brevo-mcp
+   npm install
+   npm run build
    ```
 
-3. Add the Brevo MCP configuration to your config.json:
-   ```json
-   {
-     "functions": {
-       "brevo": {
-         "path": "~/.claude/functions/node_modules/brevo-mcp",
-         "config": {
-           "apiKey": "YOUR_BREVO_API_KEY",
-           "defaultSender": {
-             "email": "your.validated@email.com",
-             "name": "Your Name"
-           }
-         }
-       }
-     }
-   }
+2. **Set Environment Variables:**
+   ```bash
+   export BREVO_API_KEY="your-brevo-api-key"
+   export BREVO_DEFAULT_SENDER_EMAIL="your-email@domain.com"
+   export BREVO_DEFAULT_SENDER_NAME="Your Name"
    ```
 
-4. Restart Claude Desktop to load the new configuration
+3. **Run the MCP Server:**
+   ```bash
+   npm start
+   # or
+   npm run smithery
+   ```
 
-## Usage in Claude
+## 🛠️ Available Tools
 
-Once configured, you can use the Brevo MCP in your Claude conversations. Here are some examples:
+### 1. `initialize_brevo`
+Initialize the Brevo API connection with your credentials.
 
-### Sending a Beautiful Email
-
-```typescript
-const brevo = new BrevoMCP(config.apiKey, config.defaultSender.email, config.defaultSender.name);
-
-await brevo.sendEmail({
-  to: [{ email: "recipient@example.com", name: "John Doe" }],
-  subject: "Hello from Claude!",
-  htmlContent: BrevoMCP.getDefaultTemplate(
-    "Welcome!",
-    "This is a test email." + 
-    BrevoMCP.formatEmailSignature("Claude", "AI Assistant")
-  )
-});
+```json
+{
+  "apiKey": "your-brevo-api-key",
+  "defaultSenderEmail": "your-email@domain.com",
+  "defaultSenderName": "Your Name"
+}
 ```
 
-### Managing Contacts
+### 2. `send_email`
+Send emails using the Brevo API.
 
-```typescript
-// Get contact details
-const contact = await brevo.getContact("john@example.com");
+```json
+{
+  "to": [{"email": "recipient@example.com", "name": "John Doe"}],
+  "subject": "Hello from Brevo MCP",
+  "htmlContent": "<h1>Welcome!</h1><p>This is a test email.</p>"
+}
+```
 
-// Update contact information
-await brevo.updateContact(contact.id, {
-  attributes: {
-    FIRSTNAME: "John",
-    LASTNAME: "Doe",
-    LINKEDIN: "https://linkedin.com/in/johndoe"
+### 3. `create_beautiful_email`
+Generate beautiful HTML emails using pre-built responsive templates.
+
+```json
+{
+  "title": "Welcome to Our Service",
+  "content": "<p>Thank you for joining us!</p>",
+  "accentColor": "#667eea",
+  "senderName": "John Smith",
+  "senderTitle": "Customer Success Manager"
+}
+```
+
+### 4. `get_contact`
+Retrieve contact information by email or ID.
+
+```json
+{
+  "identifier": "user@example.com"
+}
+```
+
+### 5. `update_contact`
+Update existing contact information.
+
+```json
+{
+  "id": 123,
+  "data": {
+    "attributes": {
+      "FIRSTNAME": "John",
+      "LASTNAME": "Doe"
+    }
   }
-});
+}
 ```
 
-### Creating Custom Attributes
+### 6. `create_attribute`
+Create new contact attributes for better segmentation.
 
-```typescript
-// Create a new custom attribute
-await brevo.createAttribute("LINKEDIN", "text");
-
-// Get all available attributes
-const attributes = await brevo.getAttributes();
+```json
+{
+  "name": "COMPANY",
+  "type": "text"
+}
 ```
 
-## API Reference
+### 7. `get_attributes`
+List all available contact attributes.
 
-### BrevoMCP Class
+### 8. `get_email_events`
+Track email delivery and engagement events.
 
-#### Constructor
-```typescript
-constructor(apiKey: string, defaultSenderEmail: string, defaultSenderName?: string)
+```json
+{
+  "messageId": "msg-123",
+  "email": "user@example.com"
+}
 ```
 
-#### Methods
+### 9. `get_senders`
+List all verified sender addresses.
 
-- `getContact(identifier: string | number): Promise<BrevoContact>`
-- `updateContact(id: number, data: Partial<BrevoContact>): Promise<void>`
-- `createAttribute(name: string, type: 'text' | 'date' | 'float' | 'boolean'): Promise<void>`
-- `getAttributes(): Promise<ContactAttribute[]>`
-- `sendEmail(options: EmailOptions): Promise<{ messageId: string }>`
-- `getEmailEvents(messageId?: string, email?: string): Promise<any[]>`
-- `getSenders(): Promise<any>`
+## 📋 Scripts
 
-#### Static Methods
+- `npm run build` - Build the TypeScript project
+- `npm start` - Start the MCP server
+- `npm run smithery` - Run with Smithery integration
+- `npm test` - Test the MCP server functionality
+- `npm run smithery:install` - Install for Smithery use
+- `npm run smithery:publish` - Publish to Smithery registry
 
-- `getDefaultTemplate(title: string, content: string, accentColor?: string): string`
-- `formatEmailSignature(name: string, title?: string, extra?: string): string`
+## 🔧 Configuration
 
-## Contributing
+### Environment Variables
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `BREVO_API_KEY` | Your Brevo API key | Yes |
+| `BREVO_DEFAULT_SENDER_EMAIL` | Default sender email address | Yes |
+| `BREVO_DEFAULT_SENDER_NAME` | Default sender name | No |
+| `DEBUG` | Enable debug logging | No |
 
-## License
+### Smithery Configuration
 
-MIT
+The server includes a `smithery.yaml` configuration file for easy deployment:
 
-## Security
+```yaml
+version: 1
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      apiKey:
+        type: string
+        description: "Brevo API key for authentication"
+      defaultSenderEmail:
+        type: string
+        description: "Default sender email address"
+      defaultSenderName:
+        type: string
+        description: "Default sender name"
+      debug:
+        type: boolean
+        description: "Enable debug mode"
+        default: false
+```
 
-Never commit your Brevo API key to version control. Always use environment variables or secure configuration files.
+## 🎨 Email Templates
+
+The server includes beautiful, responsive email templates:
+
+- **Modern gradient headers** with customizable accent colors
+- **Responsive design** that works on all devices
+- **Professional signatures** with customizable information
+- **Clean typography** using web-safe fonts
+
+## 🔒 Security
+
+- API keys are handled securely through environment variables
+- All API communications use HTTPS
+- Input validation on all tool parameters
+- Error handling prevents sensitive information leakage
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Issues**: Report issues on GitHub
+- **Documentation**: Full API documentation available
+- **Community**: Join our community discussions
+
+---
+
+**Made with ❤️ for the Claude & Smithery ecosystem**
