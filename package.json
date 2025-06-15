@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/apicolet/brevo-mcp.git"
+    "url": "git+https://github.com/samihalawa/brevo-mcp.git"
   },
   "keywords": [
     "brevo",
@@ -47,9 +47,9 @@
   "author": "Antoine Picolet",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/apicolet/brevo-mcp/issues"
+    "url": "https://github.com/samihalawa/brevo-mcp/issues"
   },
-  "homepage": "https://github.com/apicolet/brevo-mcp#readme",
+  "homepage": "https://github.com/samihalawa/brevo-mcp#readme",
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/node-fetch": "^2.6.4",

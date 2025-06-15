@@ -1553,12 +1553,20 @@ class BrevoMCPServer {
   }
 
   async run(): Promise<void> {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error('Brevo MCP server running on stdio');
+    try {
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      console.error('Brevo MCP server running on stdio');
+    } catch (error) {
+      console.error('Failed to start Brevo MCP server:', error);
+      process.exit(1);
+    }
   }
 }
 
 // Start the server
 const server = new BrevoMCPServer();
-server.run().catch(console.error);
+server.run().catch((error) => {
+  console.error('Unhandled error in Brevo MCP server:', error);
+  process.exit(1);
+});

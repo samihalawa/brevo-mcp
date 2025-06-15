@@ -19,13 +19,13 @@ startCommand:
         description: "Enable debug mode for additional logging"
         default: false
   commandFunction: |-
-    (config) => ({ 
-      command: 'node', 
-      args: ['build/index.js'], 
-      env: { 
+    (config) => ({
+      command: 'node',
+      args: ['build/index.js'],
+      env: {
         BREVO_API_KEY: config.apiKey,
         BREVO_DEFAULT_SENDER_EMAIL: config.defaultSenderEmail || '',
         BREVO_DEFAULT_SENDER_NAME: config.defaultSenderName || '',
         DEBUG: config.debug ? 'true' : 'false'
-      } 
+      }
     })
