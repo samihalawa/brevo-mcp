@@ -1,0 +1,1 @@
+{"version":3,"file":"taskList.js","sourceRoot":"","sources":["../../model/taskList.ts"],"names":[],"mappings":";;;AAkBA,MAAa,QAAQ;IAejB,MAAM,CAAC,mBAAmB;QACtB,OAAO,QAAQ,CAAC,gBAAgB,CAAC;IACrC,CAAC;;AAjBL,4BAkBC;AAZU,sBAAa,GAAuB,SAAS,CAAC;AAE9C,yBAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,OAAO;QACf,UAAU,EAAE,OAAO;QACnB,MAAM,EAAE,aAAa;KACxB;CAAK,CAAC"}

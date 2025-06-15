@@ -39,22 +39,20 @@ serverProcess.stdin.write(JSON.stringify(testRequest) + '\n');
 await setTimeout(1000);
 
 // Test tool execution
-const initRequest = {
+const accountRequest = {
   jsonrpc: '2.0',
   id: 2,
   method: 'tools/call',
   params: {
-    name: 'initialize_brevo',
+    name: 'account',
     arguments: {
-      apiKey: 'test-key',
-      defaultSenderEmail: 'test@example.com',
-      defaultSenderName: 'Test Sender'
+      operation: 'get_account'
     }
   }
 };
 
-console.log('📤 Testing initialize_brevo tool...');
-serverProcess.stdin.write(JSON.stringify(initRequest) + '\n');
+console.log('📤 Testing account tool...');
+serverProcess.stdin.write(JSON.stringify(accountRequest) + '\n');
 
 // Wait for response
 await setTimeout(1000);

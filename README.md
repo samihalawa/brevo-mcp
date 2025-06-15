@@ -1,43 +1,39 @@
 # Brevo MCP Server
 
-📧 **Multi-Channel Platform (MCP) for Brevo API integration with Claude & Smithery**
+📧 **Complete Brevo API Integration for Claude & Smithery using Official SDK**
 
-A powerful MCP server that enables Claude to interact with the Brevo email platform for sending emails, managing contacts, and tracking email events.
+A comprehensive MCP server that provides Claude with full access to Brevo's marketing automation platform using the official `@getbrevo/brevo` Node.js SDK. Features 8 organized tools covering all major Brevo functionalities.
 
 ## ✨ Features
 
-- 🔧 **Complete Brevo API Integration** - Send emails, manage contacts, track events
-- 🎨 **Beautiful Email Templates** - Pre-built responsive HTML templates
-- 🛡️ **Type-Safe** - Full TypeScript support with comprehensive type definitions
-- 🚀 **Smithery Compatible** - Ready for Smithery deployment and management
-- 🔌 **MCP Protocol** - Standard Model Context Protocol implementation
-- 📊 **Contact Management** - Create, update, and retrieve contact information
-- 📈 **Email Tracking** - Monitor email delivery, opens, clicks, and more
+- 🔧 **Official Brevo SDK** - Built with `@getbrevo/brevo` for maximum compatibility
+- 📧 **Email Operations** - Transactional emails, templates, tracking, events
+- 📱 **SMS & WhatsApp** - Send SMS, manage campaigns, WhatsApp integration
+- 👥 **Contact Management** - Contacts, lists, attributes, bulk operations
+- 🎯 **Campaign Management** - Email and SMS campaigns, scheduling, analytics
+- 💬 **Conversations** - Chat and conversation management
+- 🔗 **Webhooks** - Event-driven automation and notifications
+- 🛒 **E-commerce** - Orders, products, categories integration
+- 🏢 **Account Management** - Senders, domains, folders, account info
+- 🚀 **Smithery Compatible** - Ready for Smithery deployment
+- 🛡️ **Type-Safe** - Full TypeScript support
 
 ## 🚀 Quick Start
 
 ### Option 1: Using Smithery (Recommended)
 
-1. **Install via Smithery:**
-   ```bash
-   # Add to your Smithery configuration
-   npm install brevo-mcp
-   ```
-
-2. **Configure in smithery.yaml:**
+1. **Configure in Smithery:**
    ```yaml
    brevo-mcp:
-     apiKey: "your-brevo-api-key"
-     defaultSenderEmail: "your-email@domain.com"
-     defaultSenderName: "Your Name"
+     apiKey: "your-brevo-api-key"           # Required
+     defaultSenderEmail: "your@domain.com" # Optional
+     defaultSenderName: "Your Name"        # Optional
    ```
 
 ### Option 2: Local Installation
 
-1. **Clone and Install:**
+1. **Install:**
    ```bash
-   git clone <repository-url>
-   cd brevo-mcp
    npm install
    npm run build
    ```
@@ -45,127 +41,189 @@ A powerful MCP server that enables Claude to interact with the Brevo email platf
 2. **Set Environment Variables:**
    ```bash
    export BREVO_API_KEY="your-brevo-api-key"
-   export BREVO_DEFAULT_SENDER_EMAIL="your-email@domain.com"
+   export BREVO_DEFAULT_SENDER_EMAIL="your@domain.com"
    export BREVO_DEFAULT_SENDER_NAME="Your Name"
    ```
 
-3. **Run the MCP Server:**
+3. **Run:**
    ```bash
    npm start
-   # or
-   npm run smithery
    ```
 
 ## 🛠️ Available Tools
 
-### 1. `initialize_brevo`
-Initialize the Brevo API connection with your credentials.
+### 1. `contacts` - Contact Management
+Complete contact database operations with bulk capabilities.
 
+**Operations:**
+- `get` - Retrieve contact by email/ID
+- `create` - Create new contact
+- `update` - Update contact information
+- `delete` - Delete contact
+- `bulk_import` - Import contacts in bulk
+- `export` - Export contacts
+- `add_to_list` / `remove_from_list` - List management
+- `get_lists` / `create_list` - Manage contact lists
+- `get_attributes` / `create_attribute` / `update_attribute` - Custom attributes
+
+**Example:**
 ```json
 {
-  "apiKey": "your-brevo-api-key",
-  "defaultSenderEmail": "your-email@domain.com",
-  "defaultSenderName": "Your Name"
-}
-```
-
-### 2. `send_email`
-Send emails using the Brevo API.
-
-```json
-{
-  "to": [{"email": "recipient@example.com", "name": "John Doe"}],
-  "subject": "Hello from Brevo MCP",
-  "htmlContent": "<h1>Welcome!</h1><p>This is a test email.</p>"
-}
-```
-
-### 3. `create_beautiful_email`
-Generate beautiful HTML emails using pre-built responsive templates.
-
-```json
-{
-  "title": "Welcome to Our Service",
-  "content": "<p>Thank you for joining us!</p>",
-  "accentColor": "#667eea",
-  "senderName": "John Smith",
-  "senderTitle": "Customer Success Manager"
-}
-```
-
-### 4. `get_contact`
-Retrieve contact information by email or ID.
-
-```json
-{
-  "identifier": "user@example.com"
-}
-```
-
-### 5. `update_contact`
-Update existing contact information.
-
-```json
-{
-  "id": 123,
-  "data": {
-    "attributes": {
-      "FIRSTNAME": "John",
-      "LASTNAME": "Doe"
+  "operation": "bulk_import",
+  "contacts": [
+    {
+      "email": "user1@example.com",
+      "attributes": {
+        "FIRSTNAME": "John",
+        "LASTNAME": "Doe"
+      }
     }
+  ]
+}
+```
+
+### 2. `email` - Transactional Emails
+Send emails, manage templates, track delivery and events.
+
+**Operations:**
+- `send` - Send transactional email
+- `send_template` - Send using template
+- `get_events` - Track email events
+- `get_templates` - List email templates
+- `create_template` / `update_template` / `delete_template` - Template management
+- `get_blocked_domains` - Check blocked domains
+- `get_email_statistics` - Email analytics
+
+**Example:**
+```json
+{
+  "operation": "send",
+  "to": [{"email": "recipient@example.com", "name": "John Doe"}],
+  "subject": "Welcome to our service",
+  "htmlContent": "<h1>Welcome!</h1><p>Thank you for joining us.</p>",
+  "sender": {"email": "noreply@yourcompany.com", "name": "Your Company"}
+}
+```
+
+### 3. `campaigns` - Marketing Campaigns
+Create and manage email and SMS marketing campaigns.
+
+**Operations:**
+- `get_email_campaigns` / `create_email_campaign` / `update_email_campaign`
+- `send_email_campaign` / `schedule_email_campaign` / `delete_email_campaign`
+- `get_sms_campaigns` / `create_sms_campaign` / `update_sms_campaign`
+- `send_sms_campaign` / `schedule_sms_campaign` / `delete_sms_campaign`
+- `get_campaign_statistics` - Campaign analytics
+
+**Example:**
+```json
+{
+  "operation": "create_email_campaign",
+  "campaignData": {
+    "name": "Newsletter Campaign",
+    "subject": "Monthly Newsletter",
+    "htmlContent": "<h1>Newsletter</h1>",
+    "recipients": {"listIds": [1, 2]}
   }
 }
 ```
 
-### 6. `create_attribute`
-Create new contact attributes for better segmentation.
+### 4. `sms` - SMS Operations
+Send transactional SMS and manage SMS campaigns.
 
+**Operations:**
+- `send` - Send single SMS
+- `send_batch` - Send to multiple recipients
+- `get_events` - Track SMS events
+- `get_statistics` - SMS analytics
+
+**Example:**
 ```json
 {
-  "name": "COMPANY",
-  "type": "text"
+  "operation": "send_batch",
+  "recipients": ["+1234567890", "+0987654321"],
+  "content": "Your order is ready for pickup!",
+  "sender": "YourBrand"
 }
 ```
 
-### 7. `get_attributes`
-List all available contact attributes.
+### 5. `conversations` - Chat Management
+Handle customer conversations and chat interactions.
 
-### 8. `get_email_events`
-Track email delivery and engagement events.
+**Operations:**
+- `get_conversations` - List conversations
+- `get_conversation` - Get specific conversation
+- `get_messages` - Get conversation messages
+- `send_message` - Send message
+- `update_conversation` - Update conversation status
 
+### 6. `webhooks` - Event Automation
+Manage webhooks for real-time event notifications.
+
+**Operations:**
+- `get_webhooks` / `create_webhook` / `update_webhook` / `delete_webhook`
+- `get_webhook` - Get specific webhook
+
+**Example:**
 ```json
 {
-  "messageId": "msg-123",
-  "email": "user@example.com"
+  "operation": "create_webhook",
+  "url": "https://your-app.com/brevo-webhook",
+  "events": ["delivered", "opened", "clicked"],
+  "description": "Email tracking webhook",
+  "type": "transactional"
 }
 ```
 
-### 9. `get_senders`
-List all verified sender addresses.
+### 7. `account` - Account Management
+Manage account settings, senders, domains, and folders.
 
-## 📋 Scripts
+**Operations:**
+- `get_account` - Account information
+- `get_senders` / `create_sender` / `update_sender` / `delete_sender`
+- `get_domains` / `create_domain` / `validate_domain`
+- `get_folders` / `create_folder` / `update_folder` / `delete_folder`
 
-- `npm run build` - Build the TypeScript project
-- `npm start` - Start the MCP server
-- `npm run smithery` - Run with Smithery integration
-- `npm test` - Test the MCP server functionality
-- `npm run smithery:install` - Install for Smithery use
-- `npm run smithery:publish` - Publish to Smithery registry
+### 8. `ecommerce` - E-commerce Integration
+Manage orders, products, and categories for e-commerce tracking.
 
-## 🔧 Configuration
+**Operations:**
+- `get_orders` / `create_order` / `get_order` / `update_order`
+- `get_products` / `create_product` / `update_product` / `delete_product`
+- `get_categories` / `create_category` / `update_category` / `delete_category`
+
+**Example:**
+```json
+{
+  "operation": "create_order",
+  "orderData": {
+    "id": "order-123",
+    "email": "customer@example.com",
+    "products": [
+      {
+        "id": "product-1",
+        "name": "Widget",
+        "price": 29.99,
+        "quantity": 2
+      }
+    ],
+    "total": 59.98
+  }
+}
+```
+
+## 📋 Configuration
 
 ### Environment Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `BREVO_API_KEY` | Your Brevo API key | Yes |
-| `BREVO_DEFAULT_SENDER_EMAIL` | Default sender email address | Yes |
-| `BREVO_DEFAULT_SENDER_NAME` | Default sender name | No |
-| `DEBUG` | Enable debug logging | No |
+| `BREVO_API_KEY` | Your Brevo API key | ✅ Yes |
+| `BREVO_DEFAULT_SENDER_EMAIL` | Default sender email | ❌ No |
+| `BREVO_DEFAULT_SENDER_NAME` | Default sender name | ❌ No |
+| `DEBUG` | Enable debug logging | ❌ No |
 
 ### Smithery Configuration
-
-The server includes a `smithery.yaml` configuration file for easy deployment:
 
 ```yaml
 version: 1
@@ -173,10 +231,11 @@ startCommand:
   type: stdio
   configSchema:
     type: object
+    required: ['apiKey']
     properties:
       apiKey:
         type: string
-        description: "Brevo API key for authentication"
+        description: "Brevo API key for authentication (required)"
       defaultSenderEmail:
         type: string
         description: "Default sender email address"
@@ -189,40 +248,93 @@ startCommand:
         default: false
 ```
 
-## 🎨 Email Templates
+## 🔧 Development
 
-The server includes beautiful, responsive email templates:
+```bash
+# Install dependencies
+npm install
 
-- **Modern gradient headers** with customizable accent colors
-- **Responsive design** that works on all devices
-- **Professional signatures** with customizable information
-- **Clean typography** using web-safe fonts
+# Build the project
+npm run build
+
+# Run the server
+npm start
+
+# Test the server
+npm test
+
+# Run with Smithery
+npm run smithery
+```
+
+## 📊 Common Use Cases
+
+### Bulk Contact Import
+```json
+{
+  "operation": "bulk_import",
+  "contacts": [
+    {
+      "email": "user1@example.com",
+      "attributes": {
+        "FIRSTNAME": "John",
+        "LASTNAME": "Doe",
+        "COMPANY": "Acme Corp"
+      }
+    }
+  ]
+}
+```
+
+### Email Campaign with Tracking
+```json
+{
+  "operation": "create_email_campaign",
+  "campaignData": {
+    "name": "Product Launch",
+    "subject": "Introducing Our New Product",
+    "htmlContent": "<h1>New Product Launch</h1>",
+    "recipients": {"listIds": [1]},
+    "scheduler": {
+      "sendAt": "2024-01-01T10:00:00Z"
+    }
+  }
+}
+```
+
+### E-commerce Order Tracking
+```json
+{
+  "operation": "create_order",
+  "orderData": {
+    "id": "order-456",
+    "email": "customer@example.com",
+    "products": [
+      {"id": "prod-1", "name": "T-Shirt", "price": 25.00, "quantity": 1}
+    ],
+    "total": 25.00,
+    "status": "pending"
+  }
+}
+```
 
 ## 🔒 Security
 
-- API keys are handled securely through environment variables
-- All API communications use HTTPS
+- API keys are securely handled through environment variables
+- All communications use HTTPS through official Brevo SDK
 - Input validation on all tool parameters
-- Error handling prevents sensitive information leakage
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- Error handling prevents information leakage
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License
 
 ## 🆘 Support
 
-- **Issues**: Report issues on GitHub
-- **Documentation**: Full API documentation available
-- **Community**: Join our community discussions
+- **Issues**: Report on GitHub
+- **Brevo API Docs**: https://developers.brevo.com/
+- **Official SDK**: https://github.com/getbrevo/brevo-node
 
 ---
 
-**Made with ❤️ for the Claude & Smithery ecosystem**
+**Built with ❤️ using the official Brevo Node.js SDK for maximum reliability and features**

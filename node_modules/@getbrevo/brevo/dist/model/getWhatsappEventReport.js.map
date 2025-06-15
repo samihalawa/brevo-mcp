@@ -1,0 +1,1 @@
+{"version":3,"file":"getWhatsappEventReport.js","sourceRoot":"","sources":["../../model/getWhatsappEventReport.ts"],"names":[],"mappings":";;;AAeA,MAAa,sBAAsB;IAY/B,MAAM,CAAC,mBAAmB;QACtB,OAAO,sBAAsB,CAAC,gBAAgB,CAAC;IACnD,CAAC;;AAdL,wDAeC;AAZU,oCAAa,GAAuB,SAAS,CAAC;AAE9C,uCAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,QAAQ;QAChB,UAAU,EAAE,QAAQ;QACpB,MAAM,EAAE,0CAA0C;KACrD;CAAK,CAAC"}

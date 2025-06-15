@@ -1,0 +1,1 @@
+{"version":3,"file":"noteId.js","sourceRoot":"","sources":["../../model/noteId.ts"],"names":[],"mappings":";;;AAiBA,MAAa,MAAM;IAef,MAAM,CAAC,mBAAmB;QACtB,OAAO,MAAM,CAAC,gBAAgB,CAAC;IACnC,CAAC;;AAjBL,wBAkBC;AAZU,oBAAa,GAAuB,SAAS,CAAC;AAE9C,uBAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,IAAI;QACZ,UAAU,EAAE,IAAI;QAChB,MAAM,EAAE,QAAQ;KACnB;CAAK,CAAC"}

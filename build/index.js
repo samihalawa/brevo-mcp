@@ -2,143 +2,10 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
-import fetch from 'node-fetch';
-export class BrevoAPI {
-    constructor(apiKey, defaultSenderEmail, defaultSenderName) {
-        this.baseUrl = 'https://api.brevo.com/v3';
-        this.apiKey = apiKey;
-        this.defaultSender = {
-            email: defaultSenderEmail,
-            name: defaultSenderName || defaultSenderEmail.split('@')[0]
-        };
-    }
-    async makeRequest(endpoint, method = 'GET', body) {
-        const headers = {
-            'accept': 'application/json',
-            'api-key': this.apiKey,
-            'content-type': 'application/json'
-        };
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            method,
-            headers,
-            body: body ? JSON.stringify(body) : undefined
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Brevo API error: ${response.status} ${response.statusText} - ${errorText}`);
-        }
-        return method === 'DELETE' ? null : await response.json();
-    }
-    // Contact Management
-    async getContact(identifier) {
-        const endpoint = typeof identifier === 'number'
-            ? `/contacts/${identifier}`
-            : `/contacts/${encodeURIComponent(identifier)}`;
-        return this.makeRequest(endpoint);
-    }
-    async updateContact(id, data) {
-        await this.makeRequest(`/contacts/${id}`, 'PUT', data);
-    }
-    async createAttribute(name, type = 'text') {
-        await this.makeRequest(`/contacts/attributes/normal/${name}`, 'POST', { type });
-    }
-    async getAttributes() {
-        const response = await this.makeRequest('/contacts/attributes');
-        return response.attributes;
-    }
-    // Email Management
-    async sendEmail(options) {
-        const emailData = {
-            ...options,
-            sender: options.sender || this.defaultSender
-        };
-        return this.makeRequest('/smtp/email', 'POST', emailData);
-    }
-    async getEmailEvents(messageId, email) {
-        let endpoint = '/smtp/statistics/events';
-        const params = [];
-        if (messageId)
-            params.push(`messageId=${encodeURIComponent(messageId)}`);
-        if (email)
-            params.push(`email=${encodeURIComponent(email)}`);
-        if (params.length > 0) {
-            endpoint += `?${params.join('&')}`;
-        }
-        const response = await this.makeRequest(endpoint);
-        return response.events;
-    }
-    // Sender Management
-    async getSenders() {
-        return this.makeRequest('/senders');
-    }
-    // Templates for Beautiful Emails
-    static getDefaultTemplate(title, content, accentColor = '#667eea') {
-        return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 0;
-              padding: 0;
-              background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-            }
-            .container {
-              max-width: 600px;
-              margin: 40px auto;
-              padding: 20px;
-            }
-            .header {
-              background: linear-gradient(135deg, ${accentColor} 0%, #764ba2 100%);
-              color: white;
-              padding: 30px;
-              border-radius: 10px 10px 0 0;
-              text-align: center;
-            }
-            .content {
-              background: white;
-              padding: 30px;
-              border-radius: 0 0 10px 10px;
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            }
-            .signature {
-              color: #666;
-              font-style: italic;
-              margin-top: 30px;
-              padding-top: 20px;
-              border-top: 1px solid #eee;
-            }
-          </style>
-        </head>
-        <body>
-          <div class='container'>
-            <div class='header'>
-              <h1>${title}</h1>
-            </div>
-            <div class='content'>
-              ${content}
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    }
-    // Utility Functions
-    static formatEmailSignature(name, title, extra) {
-        let signature = `<p class="signature">Best regards,<br>${name}`;
-        if (title)
-            signature += `<br><span style="color: #666;">${title}</span>`;
-        if (extra)
-            signature += `<br><span style="color: #666;">${extra}</span>`;
-        signature += '</p>';
-        return signature;
-    }
-}
+import * as brevo from '@getbrevo/brevo';
 // MCP Server Implementation
 class BrevoMCPServer {
     constructor() {
-        this.brevoAPI = null;
         this.server = new Server({
             name: 'brevo-mcp',
             version: '1.0.0',
@@ -147,8 +14,47 @@ class BrevoMCPServer {
                 tools: {},
             },
         });
+        // Initialize from environment variables
+        this.apiKey = process.env.BREVO_API_KEY || '';
+        this.defaultSender = {
+            email: process.env.BREVO_DEFAULT_SENDER_EMAIL || '',
+            name: process.env.BREVO_DEFAULT_SENDER_NAME || ''
+        };
+        if (!this.apiKey) {
+            console.error('BREVO_API_KEY environment variable is required');
+            process.exit(1);
+        }
+        this.initializeBrevoAPIs();
         this.setupToolHandlers();
         this.setupErrorHandling();
+    }
+    initializeBrevoAPIs() {
+        // Initialize all Brevo API instances with authentication
+        this.contactsApi = new brevo.ContactsApi();
+        this.transactionalEmailsApi = new brevo.TransactionalEmailsApi();
+        this.emailCampaignsApi = new brevo.EmailCampaignsApi();
+        this.smsCampaignsApi = new brevo.SMSCampaignsApi();
+        this.transactionalSMSApi = new brevo.TransactionalSMSApi();
+        this.conversationsApi = new brevo.ConversationsApi();
+        this.webhooksApi = new brevo.WebhooksApi();
+        this.accountApi = new brevo.AccountApi();
+        this.ecommerceApi = new brevo.EcommerceApi();
+        this.sendersApi = new brevo.SendersApi();
+        this.filesApi = new brevo.FilesApi();
+        this.domainsApi = new brevo.DomainsApi();
+        // Set API key for all instances
+        const apis = [
+            this.contactsApi, this.transactionalEmailsApi, this.emailCampaignsApi,
+            this.smsCampaignsApi, this.transactionalSMSApi, this.conversationsApi,
+            this.webhooksApi, this.accountApi, this.ecommerceApi, this.sendersApi,
+            this.filesApi, this.domainsApi
+        ];
+        apis.forEach(api => {
+            const apiKeyAuth = api.authentications['api-key'];
+            if (apiKeyAuth) {
+                apiKeyAuth.apiKey = this.apiKey;
+            }
+        });
     }
     setupErrorHandling() {
         this.server.onerror = (error) => {
@@ -164,33 +70,67 @@ class BrevoMCPServer {
             return {
                 tools: [
                     {
-                        name: 'initialize_brevo',
-                        description: 'Initialize Brevo API connection with API key and default sender',
+                        name: 'contacts',
+                        description: 'Comprehensive contact management - create, update, get, bulk import, manage lists and attributes',
                         inputSchema: {
                             type: 'object',
                             properties: {
-                                apiKey: {
+                                operation: {
                                     type: 'string',
-                                    description: 'Your Brevo API key',
+                                    enum: [
+                                        'get', 'create', 'update', 'delete', 'bulk_import', 'export',
+                                        'add_to_list', 'remove_from_list', 'get_lists', 'create_list',
+                                        'get_attributes', 'create_attribute', 'update_attribute'
+                                    ],
+                                    description: 'Contact operation to perform',
                                 },
-                                defaultSenderEmail: {
+                                identifier: {
                                     type: 'string',
-                                    description: 'Default sender email address',
+                                    description: 'Contact email or ID (for get, update, delete operations)',
                                 },
-                                defaultSenderName: {
+                                contactData: {
+                                    type: 'object',
+                                    description: 'Contact information for create/update operations',
+                                },
+                                contacts: {
+                                    type: 'array',
+                                    description: 'Array of contacts for bulk operations',
+                                },
+                                listId: {
+                                    type: 'number',
+                                    description: 'List ID for list operations',
+                                },
+                                listData: {
+                                    type: 'object',
+                                    description: 'List information for create list operation',
+                                },
+                                attributeName: {
                                     type: 'string',
-                                    description: 'Default sender name',
+                                    description: 'Attribute name for attribute operations',
+                                },
+                                attributeData: {
+                                    type: 'object',
+                                    description: 'Attribute data for create/update attribute operations',
                                 },
                             },
-                            required: ['apiKey', 'defaultSenderEmail'],
+                            required: ['operation'],
                         },
                     },
                     {
-                        name: 'send_email',
-                        description: 'Send an email using Brevo API',
+                        name: 'email',
+                        description: 'Transactional email operations - send emails, manage templates, track events',
                         inputSchema: {
                             type: 'object',
                             properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'send', 'send_template', 'get_events', 'get_templates',
+                                        'create_template', 'update_template', 'delete_template',
+                                        'get_blocked_domains', 'get_email_statistics'
+                                    ],
+                                    description: 'Email operation to perform',
+                                },
                                 to: {
                                     type: 'array',
                                     items: {
@@ -211,139 +151,295 @@ class BrevoMCPServer {
                                     type: 'string',
                                     description: 'HTML content of the email',
                                 },
+                                textContent: {
+                                    type: 'string',
+                                    description: 'Text content of the email',
+                                },
+                                templateId: {
+                                    type: 'number',
+                                    description: 'Template ID for template operations',
+                                },
+                                params: {
+                                    type: 'object',
+                                    description: 'Template parameters for personalization',
+                                },
                                 sender: {
                                     type: 'object',
                                     properties: {
                                         email: { type: 'string' },
                                         name: { type: 'string' },
                                     },
-                                    description: 'Override default sender (optional)',
+                                    description: 'Sender information',
                                 },
-                            },
-                            required: ['to', 'subject', 'htmlContent'],
-                        },
-                    },
-                    {
-                        name: 'get_contact',
-                        description: 'Get contact information by email or ID',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {
-                                identifier: {
-                                    oneOf: [
-                                        { type: 'string' },
-                                        { type: 'number' },
-                                    ],
-                                    description: 'Contact email or ID',
-                                },
-                            },
-                            required: ['identifier'],
-                        },
-                    },
-                    {
-                        name: 'update_contact',
-                        description: 'Update contact information',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {
-                                id: {
-                                    type: 'number',
-                                    description: 'Contact ID',
-                                },
-                                data: {
-                                    type: 'object',
-                                    description: 'Contact data to update',
-                                },
-                            },
-                            required: ['id', 'data'],
-                        },
-                    },
-                    {
-                        name: 'create_attribute',
-                        description: 'Create a new contact attribute',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {
-                                name: {
-                                    type: 'string',
-                                    description: 'Attribute name',
-                                },
-                                type: {
-                                    type: 'string',
-                                    enum: ['text', 'date', 'float', 'boolean'],
-                                    description: 'Attribute type',
-                                    default: 'text',
-                                },
-                            },
-                            required: ['name'],
-                        },
-                    },
-                    {
-                        name: 'get_attributes',
-                        description: 'Get all contact attributes',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {},
-                        },
-                    },
-                    {
-                        name: 'get_email_events',
-                        description: 'Get email events for tracking',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {
                                 messageId: {
                                     type: 'string',
-                                    description: 'Message ID to filter events',
+                                    description: 'Message ID for event tracking',
                                 },
                                 email: {
                                     type: 'string',
-                                    description: 'Email address to filter events',
+                                    description: 'Email address for event filtering',
                                 },
                             },
+                            required: ['operation'],
                         },
                     },
                     {
-                        name: 'get_senders',
-                        description: 'Get all verified senders',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {},
-                        },
-                    },
-                    {
-                        name: 'create_beautiful_email',
-                        description: 'Create a beautiful HTML email using default template',
+                        name: 'campaigns',
+                        description: 'Email and SMS campaign management - create, update, send, schedule campaigns',
                         inputSchema: {
                             type: 'object',
                             properties: {
-                                title: {
+                                operation: {
                                     type: 'string',
-                                    description: 'Email title for header',
+                                    enum: [
+                                        'get_email_campaigns', 'create_email_campaign', 'update_email_campaign',
+                                        'send_email_campaign', 'schedule_email_campaign', 'delete_email_campaign',
+                                        'get_sms_campaigns', 'create_sms_campaign', 'update_sms_campaign',
+                                        'send_sms_campaign', 'schedule_sms_campaign', 'delete_sms_campaign',
+                                        'get_campaign_statistics'
+                                    ],
+                                    description: 'Campaign operation to perform',
+                                },
+                                campaignId: {
+                                    type: 'number',
+                                    description: 'Campaign ID for specific campaign operations',
+                                },
+                                campaignData: {
+                                    type: 'object',
+                                    description: 'Campaign configuration data',
+                                },
+                                type: {
+                                    type: 'string',
+                                    enum: ['email', 'sms'],
+                                    description: 'Campaign type',
+                                },
+                                status: {
+                                    type: 'string',
+                                    enum: ['draft', 'sent', 'archive', 'queued', 'suspended'],
+                                    description: 'Campaign status filter',
+                                },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Number of campaigns to retrieve',
+                                    default: 50,
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                    default: 0,
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'sms',
+                        description: 'SMS operations - send transactional SMS, manage SMS contacts',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'send', 'send_batch', 'get_events', 'get_statistics'
+                                    ],
+                                    description: 'SMS operation to perform',
+                                },
+                                recipient: {
+                                    type: 'string',
+                                    description: 'Phone number for single SMS',
+                                },
+                                recipients: {
+                                    type: 'array',
+                                    description: 'Phone numbers for batch SMS',
                                 },
                                 content: {
                                     type: 'string',
-                                    description: 'Email content (can include HTML)',
+                                    description: 'SMS message content',
                                 },
-                                accentColor: {
+                                sender: {
                                     type: 'string',
-                                    description: 'Accent color for the template (hex code)',
-                                    default: '#667eea',
+                                    description: 'SMS sender name/number',
                                 },
-                                senderName: {
+                                type: {
                                     type: 'string',
-                                    description: 'Sender name for signature',
+                                    enum: ['transactional', 'marketing'],
+                                    description: 'SMS type',
+                                    default: 'transactional',
                                 },
-                                senderTitle: {
+                                tag: {
                                     type: 'string',
-                                    description: 'Sender title for signature',
-                                },
-                                extraInfo: {
-                                    type: 'string',
-                                    description: 'Extra info for signature',
+                                    description: 'Tag for SMS tracking',
                                 },
                             },
-                            required: ['title', 'content'],
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'conversations',
+                        description: 'Chat and conversation management - handle customer conversations',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'get_conversations', 'get_conversation', 'get_messages',
+                                        'send_message', 'update_conversation'
+                                    ],
+                                    description: 'Conversation operation to perform',
+                                },
+                                conversationId: {
+                                    type: 'string',
+                                    description: 'Conversation ID',
+                                },
+                                message: {
+                                    type: 'string',
+                                    description: 'Message content to send',
+                                },
+                                agentId: {
+                                    type: 'string',
+                                    description: 'Agent ID for conversation assignment',
+                                },
+                                status: {
+                                    type: 'string',
+                                    enum: ['open', 'closed'],
+                                    description: 'Conversation status',
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'webhooks',
+                        description: 'Webhook management - create, update, delete webhooks for event notifications',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'get_webhooks', 'create_webhook', 'update_webhook',
+                                        'delete_webhook', 'get_webhook'
+                                    ],
+                                    description: 'Webhook operation to perform',
+                                },
+                                webhookId: {
+                                    type: 'number',
+                                    description: 'Webhook ID for specific operations',
+                                },
+                                url: {
+                                    type: 'string',
+                                    description: 'Webhook URL',
+                                },
+                                events: {
+                                    type: 'array',
+                                    items: { type: 'string' },
+                                    description: 'List of events to subscribe to',
+                                },
+                                description: {
+                                    type: 'string',
+                                    description: 'Webhook description',
+                                },
+                                type: {
+                                    type: 'string',
+                                    enum: ['transactional', 'marketing'],
+                                    description: 'Webhook type',
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'account',
+                        description: 'Account management - get account info, manage senders, domains, folders',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'get_account', 'get_senders', 'create_sender', 'update_sender',
+                                        'delete_sender', 'get_domains', 'create_domain', 'validate_domain',
+                                        'get_folders', 'create_folder', 'update_folder', 'delete_folder'
+                                    ],
+                                    description: 'Account operation to perform',
+                                },
+                                senderId: {
+                                    type: 'number',
+                                    description: 'Sender ID for sender operations',
+                                },
+                                senderData: {
+                                    type: 'object',
+                                    description: 'Sender information',
+                                },
+                                domain: {
+                                    type: 'string',
+                                    description: 'Domain name for domain operations',
+                                },
+                                folderId: {
+                                    type: 'number',
+                                    description: 'Folder ID for folder operations',
+                                },
+                                folderData: {
+                                    type: 'object',
+                                    description: 'Folder information',
+                                },
+                            },
+                            required: ['operation'],
+                        },
+                    },
+                    {
+                        name: 'ecommerce',
+                        description: 'E-commerce integration - manage orders, products, track events',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                operation: {
+                                    type: 'string',
+                                    enum: [
+                                        'create_order', 'get_order', 'get_orders', 'update_order',
+                                        'get_products', 'create_product', 'update_product', 'delete_product',
+                                        'get_categories', 'create_category', 'update_category', 'delete_category'
+                                    ],
+                                    description: 'E-commerce operation to perform',
+                                },
+                                orderId: {
+                                    type: 'string',
+                                    description: 'Order ID',
+                                },
+                                orderData: {
+                                    type: 'object',
+                                    description: 'Order information',
+                                },
+                                productId: {
+                                    type: 'string',
+                                    description: 'Product ID',
+                                },
+                                productData: {
+                                    type: 'object',
+                                    description: 'Product information',
+                                },
+                                categoryId: {
+                                    type: 'string',
+                                    description: 'Category ID',
+                                },
+                                categoryData: {
+                                    type: 'object',
+                                    description: 'Category information',
+                                },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Number of items to retrieve',
+                                    default: 50,
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                    default: 0,
+                                },
+                            },
+                            required: ['operation'],
                         },
                     },
                 ],
@@ -353,24 +449,22 @@ class BrevoMCPServer {
             const { name, arguments: args } = request.params;
             try {
                 switch (name) {
-                    case 'initialize_brevo':
-                        return await this.handleInitializeBrevo(args);
-                    case 'send_email':
-                        return await this.handleSendEmail(args);
-                    case 'get_contact':
-                        return await this.handleGetContact(args);
-                    case 'update_contact':
-                        return await this.handleUpdateContact(args);
-                    case 'create_attribute':
-                        return await this.handleCreateAttribute(args);
-                    case 'get_attributes':
-                        return await this.handleGetAttributes();
-                    case 'get_email_events':
-                        return await this.handleGetEmailEvents(args);
-                    case 'get_senders':
-                        return await this.handleGetSenders();
-                    case 'create_beautiful_email':
-                        return await this.handleCreateBeautifulEmail(args);
+                    case 'contacts':
+                        return await this.handleContacts(args);
+                    case 'email':
+                        return await this.handleEmail(args);
+                    case 'campaigns':
+                        return await this.handleCampaigns(args);
+                    case 'sms':
+                        return await this.handleSMS(args);
+                    case 'conversations':
+                        return await this.handleConversations(args);
+                    case 'webhooks':
+                        return await this.handleWebhooks(args);
+                    case 'account':
+                        return await this.handleAccount(args);
+                    case 'ecommerce':
+                        return await this.handleEcommerce(args);
                     default:
                         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
                 }
@@ -381,122 +475,265 @@ class BrevoMCPServer {
             }
         });
     }
-    ensureInitialized() {
-        if (!this.brevoAPI) {
-            throw new McpError(ErrorCode.InvalidRequest, 'Brevo API not initialized. Please call initialize_brevo first.');
+    // Contact operations handler
+    async handleContacts(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get':
+                const contact = await this.contactsApi.getContactInfo(args.identifier);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(contact.body, null, 2) }]
+                };
+            case 'create':
+                const createContact = new brevo.CreateContact();
+                Object.assign(createContact, args.contactData);
+                const createdContact = await this.contactsApi.createContact(createContact);
+                return {
+                    content: [{ type: 'text', text: `Contact created with ID: ${createdContact.body.id}` }]
+                };
+            case 'update':
+                const updateContact = new brevo.UpdateContact();
+                Object.assign(updateContact, args.contactData);
+                await this.contactsApi.updateContact(args.identifier, updateContact);
+                return {
+                    content: [{ type: 'text', text: `Contact ${args.identifier} updated successfully` }]
+                };
+            case 'bulk_import':
+                const requestContactImport = new brevo.RequestContactImport();
+                Object.assign(requestContactImport, args.contacts);
+                const importResult = await this.contactsApi.importContacts(requestContactImport);
+                return {
+                    content: [{ type: 'text', text: `Bulk import initiated: ${JSON.stringify(importResult.body, null, 2)}` }]
+                };
+            case 'get_lists':
+                const lists = await this.contactsApi.getLists();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(lists.body, null, 2) }]
+                };
+            case 'create_list':
+                const createList = new brevo.CreateList();
+                Object.assign(createList, args.listData);
+                const newList = await this.contactsApi.createList(createList);
+                return {
+                    content: [{ type: 'text', text: `List created with ID: ${newList.body.id}` }]
+                };
+            case 'get_attributes':
+                const attributes = await this.contactsApi.getAttributes();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(attributes.body, null, 2) }]
+                };
+            case 'create_attribute':
+                const createAttribute = new brevo.CreateAttribute();
+                Object.assign(createAttribute, args.attributeData);
+                await this.contactsApi.createAttribute('normal', args.attributeName, createAttribute);
+                return {
+                    content: [{ type: 'text', text: `Attribute '${args.attributeName}' created successfully` }]
+                };
+            default:
+                throw new Error(`Unknown contacts operation: ${operation}`);
         }
     }
-    async handleInitializeBrevo(args) {
-        const { apiKey, defaultSenderEmail, defaultSenderName } = args;
-        this.brevoAPI = new BrevoAPI(apiKey, defaultSenderEmail, defaultSenderName);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: `Brevo API initialized successfully with sender: ${defaultSenderEmail}`,
-                },
-            ],
-        };
-    }
-    async handleSendEmail(args) {
-        this.ensureInitialized();
-        const result = await this.brevoAPI.sendEmail(args);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: `Email sent successfully. Message ID: ${result.messageId}`,
-                },
-            ],
-        };
-    }
-    async handleGetContact(args) {
-        this.ensureInitialized();
-        const contact = await this.brevoAPI.getContact(args.identifier);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(contact, null, 2),
-                },
-            ],
-        };
-    }
-    async handleUpdateContact(args) {
-        this.ensureInitialized();
-        await this.brevoAPI.updateContact(args.id, args.data);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: `Contact ${args.id} updated successfully`,
-                },
-            ],
-        };
-    }
-    async handleCreateAttribute(args) {
-        this.ensureInitialized();
-        await this.brevoAPI.createAttribute(args.name, args.type || 'text');
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: `Attribute '${args.name}' created successfully`,
-                },
-            ],
-        };
-    }
-    async handleGetAttributes() {
-        this.ensureInitialized();
-        const attributes = await this.brevoAPI.getAttributes();
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(attributes, null, 2),
-                },
-            ],
-        };
-    }
-    async handleGetEmailEvents(args) {
-        this.ensureInitialized();
-        const events = await this.brevoAPI.getEmailEvents(args.messageId, args.email);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(events, null, 2),
-                },
-            ],
-        };
-    }
-    async handleGetSenders() {
-        this.ensureInitialized();
-        const senders = await this.brevoAPI.getSenders();
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(senders, null, 2),
-                },
-            ],
-        };
-    }
-    async handleCreateBeautifulEmail(args) {
-        const { title, content, accentColor = '#667eea', senderName, senderTitle, extraInfo } = args;
-        let htmlContent = BrevoAPI.getDefaultTemplate(title, content, accentColor);
-        if (senderName) {
-            const signature = BrevoAPI.formatEmailSignature(senderName, senderTitle, extraInfo);
-            htmlContent = htmlContent.replace('</div>', `${signature}</div>`);
+    // Email operations handler
+    async handleEmail(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'send':
+                const sendSmtpEmail = new brevo.SendSmtpEmail();
+                sendSmtpEmail.to = args.to;
+                sendSmtpEmail.subject = args.subject;
+                sendSmtpEmail.htmlContent = args.htmlContent;
+                sendSmtpEmail.textContent = args.textContent;
+                sendSmtpEmail.sender = args.sender || this.defaultSender;
+                const emailResult = await this.transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+                return {
+                    content: [{ type: 'text', text: `Email sent successfully. Message ID: ${emailResult.body.messageId}` }]
+                };
+            case 'send_template':
+                const sendTemplateEmail = new brevo.SendSmtpEmail();
+                sendTemplateEmail.to = args.to;
+                sendTemplateEmail.templateId = args.templateId;
+                sendTemplateEmail.params = args.params;
+                const templateResult = await this.transactionalEmailsApi.sendTransacEmail(sendTemplateEmail);
+                return {
+                    content: [{ type: 'text', text: `Template email sent. Message ID: ${templateResult.body.messageId}` }]
+                };
+            case 'get_events':
+                const events = await this.transactionalEmailsApi.getTransacEmailsList({
+                    messageId: args.messageId,
+                    email: args.email
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(events.body, null, 2) }]
+                };
+            case 'get_templates':
+                const templates = await this.transactionalEmailsApi.getSmtpTemplates();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(templates.body, null, 2) }]
+                };
+            default:
+                throw new Error(`Unknown email operation: ${operation}`);
         }
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: `Beautiful email template created! Use this HTML content in the send_email tool:\n\n${htmlContent}`,
-                },
-            ],
-        };
+    }
+    // Campaign operations handler
+    async handleCampaigns(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_email_campaigns':
+                const emailCampaigns = await this.emailCampaignsApi.getEmailCampaigns({
+                    type: args.type,
+                    status: args.status,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(emailCampaigns.body, null, 2) }]
+                };
+            case 'create_email_campaign':
+                const createEmailCampaign = new brevo.CreateEmailCampaign();
+                Object.assign(createEmailCampaign, args.campaignData);
+                const newEmailCampaign = await this.emailCampaignsApi.createEmailCampaign(createEmailCampaign);
+                return {
+                    content: [{ type: 'text', text: `Email campaign created with ID: ${newEmailCampaign.body.id}` }]
+                };
+            case 'get_sms_campaigns':
+                const smsCampaigns = await this.smsCampaignsApi.getSmsCampaigns({
+                    status: args.status,
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(smsCampaigns.body, null, 2) }]
+                };
+            case 'create_sms_campaign':
+                const createSmsCampaign = new brevo.CreateSmsCampaign();
+                Object.assign(createSmsCampaign, args.campaignData);
+                const newSmsCampaign = await this.smsCampaignsApi.createSmsCampaign(createSmsCampaign);
+                return {
+                    content: [{ type: 'text', text: `SMS campaign created with ID: ${newSmsCampaign.body.id}` }]
+                };
+            default:
+                throw new Error(`Unknown campaign operation: ${operation}`);
+        }
+    }
+    // SMS operations handler
+    async handleSMS(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'send':
+                const sendTransacSms = new brevo.SendTransacSms();
+                sendTransacSms.recipient = args.recipient;
+                sendTransacSms.content = args.content;
+                sendTransacSms.sender = args.sender;
+                sendTransacSms.type = args.type || 'transactional';
+                sendTransacSms.tag = args.tag;
+                const smsResult = await this.transactionalSMSApi.sendTransacSms(sendTransacSms);
+                return {
+                    content: [{ type: 'text', text: `SMS sent successfully. Reference: ${smsResult.body.reference}` }]
+                };
+            case 'send_batch':
+                const results = [];
+                for (const recipient of args.recipients) {
+                    const sendSms = new brevo.SendTransacSms();
+                    sendSms.recipient = recipient;
+                    sendSms.content = args.content;
+                    sendSms.sender = args.sender;
+                    sendSms.type = args.type || 'transactional';
+                    const result = await this.transactionalSMSApi.sendTransacSms(sendSms);
+                    results.push(result.body);
+                }
+                return {
+                    content: [{ type: 'text', text: `Batch SMS sent: ${JSON.stringify(results, null, 2)}` }]
+                };
+            default:
+                throw new Error(`Unknown SMS operation: ${operation}`);
+        }
+    }
+    // Conversations operations handler
+    async handleConversations(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_conversations':
+                const conversations = await this.conversationsApi.getConversations();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(conversations.body, null, 2) }]
+                };
+            case 'get_conversation':
+                const conversation = await this.conversationsApi.getConversation(args.conversationId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(conversation.body, null, 2) }]
+                };
+            default:
+                throw new Error(`Unknown conversation operation: ${operation}`);
+        }
+    }
+    // Webhooks operations handler
+    async handleWebhooks(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_webhooks':
+                const webhooks = await this.webhooksApi.getWebhooks();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(webhooks.body, null, 2) }]
+                };
+            case 'create_webhook':
+                const createWebhook = new brevo.CreateWebhook();
+                createWebhook.url = args.url;
+                createWebhook.events = args.events;
+                createWebhook.description = args.description;
+                createWebhook.type = args.type;
+                const newWebhook = await this.webhooksApi.createWebhook(createWebhook);
+                return {
+                    content: [{ type: 'text', text: `Webhook created with ID: ${newWebhook.body.id}` }]
+                };
+            default:
+                throw new Error(`Unknown webhook operation: ${operation}`);
+        }
+    }
+    // Account operations handler
+    async handleAccount(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_account':
+                const account = await this.accountApi.getAccount();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(account.body, null, 2) }]
+                };
+            case 'get_senders':
+                const senders = await this.sendersApi.getSenders();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(senders.body, null, 2) }]
+                };
+            case 'get_domains':
+                const domains = await this.domainsApi.getDomains();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(domains.body, null, 2) }]
+                };
+            default:
+                throw new Error(`Unknown account operation: ${operation}`);
+        }
+    }
+    // E-commerce operations handler
+    async handleEcommerce(args) {
+        const { operation } = args;
+        switch (operation) {
+            case 'get_orders':
+                const orders = await this.ecommerceApi.getOrders({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(orders.body, null, 2) }]
+                };
+            case 'create_order':
+                const order = new brevo.Order();
+                Object.assign(order, args.orderData);
+                const newOrder = await this.ecommerceApi.createOrder(order);
+                return {
+                    content: [{ type: 'text', text: `Order created: ${JSON.stringify(newOrder.body, null, 2)}` }]
+                };
+            default:
+                throw new Error(`Unknown e-commerce operation: ${operation}`);
+        }
     }
     async run() {
         const transport = new StdioServerTransport();
@@ -507,4 +744,3 @@ class BrevoMCPServer {
 // Start the server
 const server = new BrevoMCPServer();
 server.run().catch(console.error);
-export default BrevoAPI;

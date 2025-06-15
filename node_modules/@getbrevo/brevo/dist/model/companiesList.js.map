@@ -1,0 +1,1 @@
+{"version":3,"file":"companiesList.js","sourceRoot":"","sources":["../../model/companiesList.ts"],"names":[],"mappings":";;;AAkBA,MAAa,aAAa;IAetB,MAAM,CAAC,mBAAmB;QACtB,OAAO,aAAa,CAAC,gBAAgB,CAAC;IAC1C,CAAC;;AAjBL,sCAkBC;AAZU,2BAAa,GAAuB,SAAS,CAAC;AAE9C,8BAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,OAAO;QACf,UAAU,EAAE,OAAO;QACnB,MAAM,EAAE,gBAAgB;KAC3B;CAAK,CAAC"}

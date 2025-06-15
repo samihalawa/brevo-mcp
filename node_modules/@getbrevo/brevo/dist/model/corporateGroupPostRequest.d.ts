@@ -1,0 +1,15 @@
+export declare class CorporateGroupPostRequest {
+    'groupName': string;
+    'subAccountIds'?: Array<number>;
+    static discriminator: string | undefined;
+    static attributeTypeMap: Array<{
+        name: string;
+        baseName: string;
+        type: string;
+    }>;
+    static getAttributeTypeMap(): {
+        name: string;
+        baseName: string;
+        type: string;
+    }[];
+}

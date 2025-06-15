@@ -3,29 +3,29 @@ startCommand:
   type: stdio
   configSchema:
     type: object
-    required: []
+    required: ['apiKey']
     properties:
-      debug:
-        type: boolean
-        description: "Enable debug mode for additional logging"
-        default: false
       apiKey:
         type: string
-        description: "Brevo API key for authentication"
+        description: "Brevo API key for authentication (required)"
       defaultSenderEmail:
         type: string
         description: "Default sender email address"
       defaultSenderName:
         type: string
         description: "Default sender name"
+      debug:
+        type: boolean
+        description: "Enable debug mode for additional logging"
+        default: false
   commandFunction: |-
     (config) => ({ 
       command: 'node', 
       args: ['build/index.js'], 
       env: { 
-        DEBUG: config.debug ? 'true' : 'false',
-        BREVO_API_KEY: config.apiKey || '',
+        BREVO_API_KEY: config.apiKey,
         BREVO_DEFAULT_SENDER_EMAIL: config.defaultSenderEmail || '',
-        BREVO_DEFAULT_SENDER_NAME: config.defaultSenderName || ''
+        BREVO_DEFAULT_SENDER_NAME: config.defaultSenderName || '',
+        DEBUG: config.debug ? 'true' : 'false'
       } 
     })

@@ -1,0 +1,1 @@
+{"version":3,"file":"getReports.js","sourceRoot":"","sources":["../../model/getReports.ts"],"names":[],"mappings":";;;AAeA,MAAa,UAAU;IAYnB,MAAM,CAAC,mBAAmB;QACtB,OAAO,UAAU,CAAC,gBAAgB,CAAC;IACvC,CAAC;;AAdL,gCAeC;AAZU,wBAAa,GAAuB,SAAS,CAAC;AAE9C,2BAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,SAAS;QACjB,UAAU,EAAE,SAAS;QACrB,MAAM,EAAE,+BAA+B;KAC1C;CAAK,CAAC"}

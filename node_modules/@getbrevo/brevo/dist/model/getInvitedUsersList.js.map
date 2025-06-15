@@ -1,0 +1,1 @@
+{"version":3,"file":"getInvitedUsersList.js","sourceRoot":"","sources":["../../model/getInvitedUsersList.ts"],"names":[],"mappings":";;;AAeA,MAAa,mBAAmB;IAe5B,MAAM,CAAC,mBAAmB;QACtB,OAAO,mBAAmB,CAAC,gBAAgB,CAAC;IAChD,CAAC;;AAjBL,kDAkBC;AAZU,iCAAa,GAAuB,SAAS,CAAC;AAE9C,oCAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,OAAO;QACf,UAAU,EAAE,OAAO;QACnB,MAAM,EAAE,sCAAsC;KACjD;CAAK,CAAC"}

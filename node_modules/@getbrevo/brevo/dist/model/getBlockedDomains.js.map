@@ -1,0 +1,1 @@
+{"version":3,"file":"getBlockedDomains.js","sourceRoot":"","sources":["../../model/getBlockedDomains.ts"],"names":[],"mappings":";;;AAiBA,MAAa,iBAAiB;IAe1B,MAAM,CAAC,mBAAmB;QACtB,OAAO,iBAAiB,CAAC,gBAAgB,CAAC;IAC9C,CAAC;;AAjBL,8CAkBC;AAZU,+BAAa,GAAuB,SAAS,CAAC;AAE9C,kCAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,SAAS;QACjB,UAAU,EAAE,SAAS;QACrB,MAAM,EAAE,eAAe;KAC1B;CAAK,CAAC"}

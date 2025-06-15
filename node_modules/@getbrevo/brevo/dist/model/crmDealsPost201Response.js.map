@@ -1,0 +1,1 @@
+{"version":3,"file":"crmDealsPost201Response.js","sourceRoot":"","sources":["../../model/crmDealsPost201Response.ts"],"names":[],"mappings":";;;AAiBA,MAAa,uBAAuB;IAehC,MAAM,CAAC,mBAAmB;QACtB,OAAO,uBAAuB,CAAC,gBAAgB,CAAC;IACpD,CAAC;;AAjBL,0DAkBC;AAZU,qCAAa,GAAuB,SAAS,CAAC;AAE9C,wCAAgB,GAA0D;IAC7E;QACI,MAAM,EAAE,IAAI;QACZ,UAAU,EAAE,IAAI;QAChB,MAAM,EAAE,QAAQ;KACnB;CAAK,CAAC"}
