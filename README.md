@@ -1,5 +1,7 @@
 # Brevo MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@samihalawa/brevo-mcp)](https://smithery.ai/server/@samihalawa/brevo-mcp)
+
 📧 **Multi-Channel Platform (MCP) for Brevo API integration with Claude & Smithery**
 
 A powerful MCP server that enables Claude to interact with the Brevo email platform for sending emails, managing contacts, and tracking email events.
@@ -15,6 +17,14 @@ A powerful MCP server that enables Claude to interact with the Brevo email platf
 - 📈 **Email Tracking** - Monitor email delivery, opens, clicks, and more
 
 ## 🚀 Quick Start
+
+### Installing via Smithery
+
+To install Brevo MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@samihalawa/brevo-mcp):
+
+```bash
+npx -y @smithery/cli install @samihalawa/brevo-mcp --client claude
+```
 
 ### Option 1: Using Smithery (Recommended)
 
