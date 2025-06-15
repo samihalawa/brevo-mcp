@@ -16,10 +16,13 @@ class BrevoMCPServer {
         });
         // Initialize from environment variables
         this.apiKey = process.env.BREVO_API_KEY || '';
-        this.defaultSender = {
-            email: process.env.BREVO_DEFAULT_SENDER_EMAIL || '',
-            name: process.env.BREVO_DEFAULT_SENDER_NAME || ''
-        };
+        // Optional default sender configuration
+        if (process.env.BREVO_DEFAULT_SENDER_EMAIL) {
+            this.defaultSender = {
+                email: process.env.BREVO_DEFAULT_SENDER_EMAIL,
+                name: process.env.BREVO_DEFAULT_SENDER_NAME || 'Brevo Sender'
+            };
+        }
         if (!this.apiKey) {
             console.error('BREVO_API_KEY environment variable is required');
             process.exit(1);
@@ -837,7 +840,15 @@ class BrevoMCPServer {
                 sendSmtpEmail.subject = args.subject;
                 sendSmtpEmail.htmlContent = args.htmlContent;
                 sendSmtpEmail.textContent = args.textContent;
-                sendSmtpEmail.sender = args.sender || this.defaultSender;
+                if (args.sender) {
+                    sendSmtpEmail.sender = args.sender;
+                }
+                else if (this.defaultSender) {
+                    sendSmtpEmail.sender = this.defaultSender;
+                }
+                else {
+                    throw new Error('Sender is required. Either provide sender in args or set BREVO_DEFAULT_SENDER_EMAIL environment variable.');
+                }
                 const emailResult = await this.transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
                 return {
                     content: [{ type: 'text', text: `Email sent successfully. Message ID: ${emailResult.body.messageId}` }]
