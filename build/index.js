@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
 import * as brevo from '@getbrevo/brevo';
 // MCP Server Implementation
 class BrevoMCPServer {
@@ -12,6 +12,7 @@ class BrevoMCPServer {
         }, {
             capabilities: {
                 tools: {},
+                resources: {},
             },
         });
         // Initialize from environment variables
@@ -29,6 +30,7 @@ class BrevoMCPServer {
         }
         this.initializeBrevoAPIs();
         this.setupToolHandlers();
+        this.setupResourceHandlers();
         this.setupErrorHandling();
     }
     initializeBrevoAPIs() {
@@ -98,7 +100,7 @@ class BrevoMCPServer {
                                 operation: {
                                     type: 'string',
                                     enum: [
-                                        'get', 'create', 'update', 'delete', 'bulk_import', 'export',
+                                        'get', 'create', 'update', 'delete', 'bulk_import', 'bulk_update', 'export',
                                         'add_to_list', 'remove_from_list', 'get_lists', 'create_list',
                                         'get_attributes', 'create_attribute', 'update_attribute'
                                     ],
@@ -199,6 +201,26 @@ class BrevoMCPServer {
                                     type: 'string',
                                     description: 'Email address for event filtering',
                                 },
+                                templateData: {
+                                    type: 'object',
+                                    description: 'Template data for create/update operations',
+                                },
+                                startDate: {
+                                    type: 'string',
+                                    description: 'Start date for statistics (YYYY-MM-DD)',
+                                },
+                                endDate: {
+                                    type: 'string',
+                                    description: 'End date for statistics (YYYY-MM-DD)',
+                                },
+                                days: {
+                                    type: 'number',
+                                    description: 'Number of days for statistics',
+                                },
+                                tag: {
+                                    type: 'string',
+                                    description: 'Tag for filtering statistics',
+                                },
                             },
                             required: ['operation'],
                         },
@@ -214,9 +236,9 @@ class BrevoMCPServer {
                                     enum: [
                                         'get_email_campaigns', 'create_email_campaign', 'update_email_campaign',
                                         'send_email_campaign', 'schedule_email_campaign', 'delete_email_campaign',
-                                        'get_sms_campaigns', 'create_sms_campaign', 'update_sms_campaign',
+                                        'export_email_recipients', 'get_sms_campaigns', 'create_sms_campaign', 'update_sms_campaign',
                                         'send_sms_campaign', 'schedule_sms_campaign', 'delete_sms_campaign',
-                                        'get_campaign_statistics'
+                                        'export_sms_recipients', 'get_campaign_statistics'
                                     ],
                                     description: 'Campaign operation to perform',
                                 },
@@ -291,6 +313,43 @@ class BrevoMCPServer {
                                     type: 'string',
                                     description: 'Tag for SMS tracking',
                                 },
+                                limit: {
+                                    type: 'number',
+                                    description: 'Limit for events/statistics',
+                                },
+                                startDate: {
+                                    type: 'string',
+                                    description: 'Start date for events/statistics (YYYY-MM-DD)',
+                                },
+                                endDate: {
+                                    type: 'string',
+                                    description: 'End date for events/statistics (YYYY-MM-DD)',
+                                },
+                                offset: {
+                                    type: 'number',
+                                    description: 'Offset for pagination',
+                                },
+                                days: {
+                                    type: 'number',
+                                    description: 'Number of days for statistics',
+                                },
+                                phoneNumber: {
+                                    type: 'string',
+                                    description: 'Phone number for filtering events',
+                                },
+                                event: {
+                                    type: 'string',
+                                    description: 'Event type for filtering',
+                                },
+                                tags: {
+                                    type: 'array',
+                                    items: { type: 'string' },
+                                    description: 'Tags for filtering events',
+                                },
+                                sort: {
+                                    type: 'string',
+                                    description: 'Sort order for events',
+                                },
                             },
                             required: ['operation'],
                         },
@@ -340,7 +399,7 @@ class BrevoMCPServer {
                                     type: 'string',
                                     enum: [
                                         'get_webhooks', 'create_webhook', 'update_webhook',
-                                        'delete_webhook', 'get_webhook'
+                                        'delete_webhook', 'get_webhook', 'export_history'
                                     ],
                                     description: 'Webhook operation to perform',
                                 },
@@ -365,6 +424,10 @@ class BrevoMCPServer {
                                     type: 'string',
                                     enum: ['transactional', 'marketing'],
                                     description: 'Webhook type',
+                                },
+                                exportData: {
+                                    type: 'object',
+                                    description: 'Export configuration for webhook history',
                                 },
                             },
                             required: ['operation'],
@@ -418,9 +481,9 @@ class BrevoMCPServer {
                                 operation: {
                                     type: 'string',
                                     enum: [
-                                        'create_order', 'get_order', 'get_orders', 'update_order',
-                                        'get_products', 'create_product', 'update_product', 'delete_product',
-                                        'get_categories', 'create_category', 'update_category', 'delete_category',
+                                        'create_order', 'get_order', 'get_orders', 'update_order', 'create_batch_order',
+                                        'get_products', 'create_product', 'update_product', 'delete_product', 'create_update_batch_products',
+                                        'get_categories', 'create_category', 'update_category', 'delete_category', 'create_update_batch_category',
                                         'get_coupon_collections', 'get_coupon_collection', 'create_coupon_collection',
                                         'update_coupon_collection', 'create_coupons', 'create_payment_request',
                                         'get_payment_request', 'delete_payment_request'
@@ -728,6 +791,34 @@ class BrevoMCPServer {
                             required: ['operation'],
                         },
                     },
+                    {
+                        name: 'bulk_contact_import',
+                        description: 'Intelligent bulk contact import from pasted text - analyzes text, maps attributes, checks duplicates, and imports efficiently',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                text: {
+                                    type: 'string',
+                                    description: 'Pasted contact data (CSV, email list, mixed text format)',
+                                },
+                                listId: {
+                                    type: 'number',
+                                    description: 'Optional: List ID to add contacts to',
+                                },
+                                updateExisting: {
+                                    type: 'boolean',
+                                    description: 'Whether to update existing contacts',
+                                    default: true,
+                                },
+                                dryRun: {
+                                    type: 'boolean',
+                                    description: 'Preview the import without executing',
+                                    default: false,
+                                },
+                            },
+                            required: ['text'],
+                        },
+                    },
                 ],
             };
         });
@@ -761,6 +852,8 @@ class BrevoMCPServer {
                         return await this.handleInbound(args);
                     case 'enterprise':
                         return await this.handleEnterprise(args);
+                    case 'bulk_contact_import':
+                        return await this.handleBulkContactImport(args);
                     default:
                         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
                 }
@@ -768,6 +861,243 @@ class BrevoMCPServer {
             catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 throw new McpError(ErrorCode.InternalError, `Error executing ${name}: ${errorMessage}`);
+            }
+        });
+    }
+    setupResourceHandlers() {
+        this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+            return {
+                resources: [
+                    {
+                        uri: 'brevo://schemas/contact',
+                        name: 'Contact Schema',
+                        description: 'Complete contact model with all available attributes',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'brevo://schemas/email-template',
+                        name: 'Email Template Schema',
+                        description: 'Email template structure for creating templates',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'brevo://samples/contacts',
+                        name: 'Sample Contacts',
+                        description: '5 sample contacts with realistic data',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'brevo://schemas/bulk-import',
+                        name: 'Bulk Import Schema',
+                        description: 'Schema for bulk contact import operations',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'brevo://current/attributes',
+                        name: 'Current Attributes',
+                        description: 'Live list of all contact attributes in your account',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'brevo://current/lists',
+                        name: 'Current Lists',
+                        description: 'Live list of all contact lists in your account',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'brevo://tools/bulk-contact-import',
+                        name: 'Bulk Contact Import Helper',
+                        description: 'Intelligent helper for importing contacts from pasted text',
+                        mimeType: 'application/json'
+                    }
+                ]
+            };
+        });
+        this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+            const uri = request.params.uri;
+            switch (uri) {
+                case 'brevo://schemas/contact':
+                    return {
+                        contents: [{
+                                uri,
+                                mimeType: 'application/json',
+                                text: JSON.stringify({
+                                    email: "user@example.com",
+                                    attributes: {
+                                        FIRSTNAME: "John",
+                                        LASTNAME: "Doe",
+                                        SMS: "+1234567890",
+                                        COMPANY: "Acme Corp",
+                                        JOB_TITLE: "Developer",
+                                        LINKEDIN: "https://linkedin.com/in/johndoe",
+                                        WHATSAPP: "+1234567890",
+                                        COUNTRY: "USA",
+                                        TAGS: "premium,developer"
+                                    },
+                                    listIds: [1, 2],
+                                    emailBlacklisted: false,
+                                    smsBlacklisted: false,
+                                    updateEnabled: true
+                                }, null, 2)
+                            }]
+                    };
+                case 'brevo://schemas/email-template':
+                    return {
+                        contents: [{
+                                uri,
+                                mimeType: 'application/json',
+                                text: JSON.stringify({
+                                    templateName: "Welcome Email",
+                                    subject: "Welcome {{contact.FIRSTNAME}}!",
+                                    sender: {
+                                        name: "Your Company",
+                                        email: "noreply@yourcompany.com"
+                                    },
+                                    htmlContent: "<html><body><h1>Hello {{contact.FIRSTNAME}}!</h1><p>Welcome to our platform.</p></body></html>",
+                                    isActive: true,
+                                    tag: "welcome"
+                                }, null, 2)
+                            }]
+                    };
+                case 'brevo://samples/contacts':
+                    return {
+                        contents: [{
+                                uri,
+                                mimeType: 'application/json',
+                                text: JSON.stringify([
+                                    {
+                                        email: "alice.johnson@example.com",
+                                        attributes: {
+                                            FIRSTNAME: "Alice",
+                                            LASTNAME: "Johnson",
+                                            COMPANY: "TechCorp",
+                                            JOB_TITLE: "Marketing Manager",
+                                            COUNTRY: "USA",
+                                            SMS: "+15551234567"
+                                        }
+                                    },
+                                    {
+                                        email: "bob.smith@example.com",
+                                        attributes: {
+                                            FIRSTNAME: "Bob",
+                                            LASTNAME: "Smith",
+                                            COMPANY: "StartupXYZ",
+                                            JOB_TITLE: "CTO",
+                                            COUNTRY: "Canada",
+                                            LINKEDIN: "https://linkedin.com/in/bobsmith"
+                                        }
+                                    },
+                                    {
+                                        email: "carol.davis@example.com",
+                                        attributes: {
+                                            FIRSTNAME: "Carol",
+                                            LASTNAME: "Davis",
+                                            COMPANY: "Enterprise Inc",
+                                            JOB_TITLE: "Sales Director",
+                                            COUNTRY: "UK",
+                                            SMS: "+447123456789"
+                                        }
+                                    },
+                                    {
+                                        email: "david.wilson@example.com",
+                                        attributes: {
+                                            FIRSTNAME: "David",
+                                            LASTNAME: "Wilson",
+                                            COMPANY: "Innovation Labs",
+                                            JOB_TITLE: "Product Manager",
+                                            COUNTRY: "Germany",
+                                            WHATSAPP: "+491234567890"
+                                        }
+                                    },
+                                    {
+                                        email: "emma.brown@example.com",
+                                        attributes: {
+                                            FIRSTNAME: "Emma",
+                                            LASTNAME: "Brown",
+                                            COMPANY: "Creative Agency",
+                                            JOB_TITLE: "Designer",
+                                            COUNTRY: "Australia",
+                                            TAGS: "premium,creative"
+                                        }
+                                    }
+                                ], null, 2)
+                            }]
+                    };
+                case 'brevo://schemas/bulk-import':
+                    return {
+                        contents: [{
+                                uri,
+                                mimeType: 'application/json',
+                                text: JSON.stringify({
+                                    type: "bulk_import",
+                                    jsonBody: [
+                                        {
+                                            email: "user1@example.com",
+                                            attributes: {
+                                                FIRSTNAME: "John",
+                                                LASTNAME: "Doe"
+                                            }
+                                        }
+                                    ],
+                                    listIds: [1],
+                                    updateExistingContacts: true,
+                                    emptyContactsAttributes: false
+                                }, null, 2)
+                            }]
+                    };
+                case 'brevo://current/attributes':
+                    try {
+                        const attributes = await this.contactsApi.getAttributes();
+                        return {
+                            contents: [{
+                                    uri,
+                                    mimeType: 'application/json',
+                                    text: JSON.stringify(attributes.body, null, 2)
+                                }]
+                        };
+                    }
+                    catch (error) {
+                        throw new McpError(ErrorCode.InternalError, `Failed to fetch attributes: ${error}`);
+                    }
+                case 'brevo://current/lists':
+                    try {
+                        const lists = await this.contactsApi.getLists();
+                        return {
+                            contents: [{
+                                    uri,
+                                    mimeType: 'application/json',
+                                    text: JSON.stringify(lists.body, null, 2)
+                                }]
+                        };
+                    }
+                    catch (error) {
+                        throw new McpError(ErrorCode.InternalError, `Failed to fetch lists: ${error}`);
+                    }
+                case 'brevo://tools/bulk-contact-import':
+                    return {
+                        contents: [{
+                                uri,
+                                mimeType: 'application/json',
+                                text: JSON.stringify({
+                                    instructions: "Use this tool to intelligently import contacts from pasted text",
+                                    process: [
+                                        "1. Analyze the provided text to extract contact information",
+                                        "2. Map to existing Brevo attributes",
+                                        "3. Check for duplicates against existing contacts",
+                                        "4. Format for bulk import",
+                                        "5. Execute the import operation"
+                                    ],
+                                    parameters: {
+                                        text: "Paste your contact data here (CSV, text, emails, etc.)",
+                                        listId: "Optional: List ID to add contacts to",
+                                        updateExisting: "true/false - whether to update existing contacts"
+                                    },
+                                    example: "John Doe <john@example.com>, Jane Smith (jane@example.com), Bob Wilson bob@test.com +1234567890"
+                                }, null, 2)
+                            }]
+                    };
+                default:
+                    throw new McpError(ErrorCode.InvalidRequest, `Unknown resource: ${uri}`);
             }
         });
     }
@@ -813,6 +1143,32 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: `List created with ID: ${newList.body.id}` }]
                 };
+            case 'delete':
+                await this.contactsApi.deleteContact(args.identifier);
+                return {
+                    content: [{ type: 'text', text: `Contact ${args.identifier} deleted successfully` }]
+                };
+            case 'export':
+                const requestContactExport = new brevo.RequestContactExport();
+                Object.assign(requestContactExport, args.contactData);
+                const exportResult = await this.contactsApi.requestContactExport(requestContactExport);
+                return {
+                    content: [{ type: 'text', text: `Contact export initiated: ${JSON.stringify(exportResult.body, null, 2)}` }]
+                };
+            case 'add_to_list':
+                const addContactToList = new brevo.AddContactToList();
+                addContactToList.emails = [args.identifier];
+                const addResult = await this.contactsApi.addContactToList(args.listId, addContactToList);
+                return {
+                    content: [{ type: 'text', text: `Contact added to list: ${JSON.stringify(addResult.body, null, 2)}` }]
+                };
+            case 'remove_from_list':
+                const removeContactFromList = new brevo.RemoveContactFromList();
+                removeContactFromList.emails = [args.identifier];
+                const removeResult = await this.contactsApi.removeContactFromList(args.listId, removeContactFromList);
+                return {
+                    content: [{ type: 'text', text: `Contact removed from list: ${JSON.stringify(removeResult.body, null, 2)}` }]
+                };
             case 'get_attributes':
                 const attributes = await this.contactsApi.getAttributes();
                 return {
@@ -824,6 +1180,20 @@ class BrevoMCPServer {
                 await this.contactsApi.createAttribute('normal', args.attributeName, createAttribute);
                 return {
                     content: [{ type: 'text', text: `Attribute '${args.attributeName}' created successfully` }]
+                };
+            case 'bulk_update':
+                const updateBatchContacts = new brevo.UpdateBatchContacts();
+                Object.assign(updateBatchContacts, args.contacts);
+                const batchUpdateResult = await this.contactsApi.updateBatchContacts(updateBatchContacts);
+                return {
+                    content: [{ type: 'text', text: `Batch update completed: ${JSON.stringify(batchUpdateResult.body, null, 2)}` }]
+                };
+            case 'update_attribute':
+                const updateAttribute = new brevo.UpdateAttribute();
+                Object.assign(updateAttribute, args.attributeData);
+                await this.contactsApi.updateAttribute('category', args.attributeName, updateAttribute);
+                return {
+                    content: [{ type: 'text', text: `Attribute '${args.attributeName}' updated successfully` }]
                 };
             default:
                 throw new Error(`Unknown contacts operation: ${operation}`);
@@ -874,6 +1244,35 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: JSON.stringify(templates.body, null, 2) }]
                 };
+            case 'create_template':
+                const createTemplate = new brevo.CreateSmtpTemplate();
+                Object.assign(createTemplate, args.templateData);
+                const newTemplate = await this.transactionalEmailsApi.createSmtpTemplate(createTemplate);
+                return {
+                    content: [{ type: 'text', text: `Template created with ID: ${newTemplate.body.id}` }]
+                };
+            case 'update_template':
+                const updateTemplate = new brevo.UpdateSmtpTemplate();
+                Object.assign(updateTemplate, args.templateData);
+                await this.transactionalEmailsApi.updateSmtpTemplate(args.templateId, updateTemplate);
+                return {
+                    content: [{ type: 'text', text: `Template ${args.templateId} updated successfully` }]
+                };
+            case 'delete_template':
+                await this.transactionalEmailsApi.deleteSmtpTemplate(args.templateId);
+                return {
+                    content: [{ type: 'text', text: `Template ${args.templateId} deleted successfully` }]
+                };
+            case 'get_blocked_domains':
+                const blockedDomains = await this.transactionalEmailsApi.getBlockedDomains();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(blockedDomains.body, null, 2) }]
+                };
+            case 'get_email_statistics':
+                const emailStats = await this.transactionalEmailsApi.getAggregatedSmtpReport(args.startDate, args.endDate, args.days, args.tag);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(emailStats.body, null, 2) }]
+                };
             default:
                 throw new Error(`Unknown email operation: ${operation}`);
         }
@@ -908,12 +1307,79 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: JSON.stringify(smsCampaigns.body, null, 2) }]
                 };
+            case 'update_email_campaign':
+                const updateEmailCampaign = new brevo.UpdateEmailCampaign();
+                Object.assign(updateEmailCampaign, args.campaignData);
+                await this.emailCampaignsApi.updateEmailCampaign(args.campaignId, updateEmailCampaign);
+                return {
+                    content: [{ type: 'text', text: `Email campaign ${args.campaignId} updated successfully` }]
+                };
+            case 'send_email_campaign':
+                await this.emailCampaignsApi.sendEmailCampaignNow(args.campaignId);
+                return {
+                    content: [{ type: 'text', text: `Email campaign ${args.campaignId} sent successfully` }]
+                };
+            case 'schedule_email_campaign':
+                const scheduleData = new brevo.UpdateCampaignStatus();
+                Object.assign(scheduleData, args.campaignData);
+                await this.emailCampaignsApi.updateCampaignStatus(args.campaignId, scheduleData);
+                return {
+                    content: [{ type: 'text', text: `Email campaign ${args.campaignId} scheduled successfully` }]
+                };
+            case 'delete_email_campaign':
+                await this.emailCampaignsApi.deleteEmailCampaign(args.campaignId);
+                return {
+                    content: [{ type: 'text', text: `Email campaign ${args.campaignId} deleted successfully` }]
+                };
             case 'create_sms_campaign':
                 const createSmsCampaign = new brevo.CreateSmsCampaign();
                 Object.assign(createSmsCampaign, args.campaignData);
                 const newSmsCampaign = await this.smsCampaignsApi.createSmsCampaign(createSmsCampaign);
                 return {
                     content: [{ type: 'text', text: `SMS campaign created with ID: ${newSmsCampaign.body.id}` }]
+                };
+            case 'update_sms_campaign':
+                const updateSmsCampaign = new brevo.UpdateSmsCampaign();
+                Object.assign(updateSmsCampaign, args.campaignData);
+                await this.smsCampaignsApi.updateSmsCampaign(args.campaignId, updateSmsCampaign);
+                return {
+                    content: [{ type: 'text', text: `SMS campaign ${args.campaignId} updated successfully` }]
+                };
+            case 'send_sms_campaign':
+                await this.smsCampaignsApi.sendSmsCampaignNow(args.campaignId);
+                return {
+                    content: [{ type: 'text', text: `SMS campaign ${args.campaignId} sent successfully` }]
+                };
+            case 'schedule_sms_campaign':
+                const scheduleSmsData = new brevo.UpdateCampaignStatus();
+                Object.assign(scheduleSmsData, args.campaignData);
+                await this.smsCampaignsApi.updateSmsCampaignStatus(args.campaignId, scheduleSmsData);
+                return {
+                    content: [{ type: 'text', text: `SMS campaign ${args.campaignId} scheduled successfully` }]
+                };
+            case 'delete_sms_campaign':
+                await this.smsCampaignsApi.deleteSmsCampaign(args.campaignId);
+                return {
+                    content: [{ type: 'text', text: `SMS campaign ${args.campaignId} deleted successfully` }]
+                };
+            case 'export_email_recipients':
+                const emailExport = new brevo.EmailExportRecipients();
+                Object.assign(emailExport, args.campaignData);
+                const emailExportResult = await this.emailCampaignsApi.emailExportRecipients(args.campaignId, emailExport);
+                return {
+                    content: [{ type: 'text', text: `Email recipients export initiated: ${JSON.stringify(emailExportResult.body, null, 2)}` }]
+                };
+            case 'export_sms_recipients':
+                const smsExport = new brevo.RequestSmsRecipientExport();
+                Object.assign(smsExport, args.campaignData);
+                const smsExportResult = await this.smsCampaignsApi.requestSmsRecipientExport(args.campaignId, smsExport);
+                return {
+                    content: [{ type: 'text', text: `SMS recipients export initiated: ${JSON.stringify(smsExportResult.body, null, 2)}` }]
+                };
+            case 'get_campaign_statistics':
+                const campaignStats = await this.emailCampaignsApi.getEmailCampaign(args.campaignId, true);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(campaignStats.body, null, 2) }]
                 };
             default:
                 throw new Error(`Unknown campaign operation: ${operation}`);
@@ -948,6 +1414,26 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: `Batch SMS sent: ${JSON.stringify(results, null, 2)}` }]
                 };
+            case 'get_events':
+                const smsEvents = await this.transactionalSMSApi.getSmsEvents({
+                    limit: args.limit,
+                    startDate: args.startDate,
+                    endDate: args.endDate,
+                    offset: args.offset,
+                    days: args.days,
+                    phoneNumber: args.phoneNumber,
+                    event: args.event,
+                    tags: args.tags,
+                    sort: args.sort
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(smsEvents.body, null, 2) }]
+                };
+            case 'get_statistics':
+                const smsStats = await this.transactionalSMSApi.getTransacAggregatedSmsReport(args.startDate, args.endDate, args.days, args.tag);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(smsStats.body, null, 2) }]
+                };
             default:
                 throw new Error(`Unknown SMS operation: ${operation}`);
         }
@@ -962,9 +1448,32 @@ class BrevoMCPServer {
                     content: [{ type: 'text', text: JSON.stringify(conversations.body, null, 2) }]
                 };
             case 'get_conversation':
-                const conversation = await this.conversationsApi.getConversation(args.conversationId);
+                const conversation = await this.conversationsApi.conversationsMessagesIdGet(args.conversationId);
                 return {
                     content: [{ type: 'text', text: JSON.stringify(conversation.body, null, 2) }]
+                };
+            case 'get_messages':
+                const messages = await this.conversationsApi.conversationsMessagesIdGet(args.conversationId);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(messages.body, null, 2) }]
+                };
+            case 'send_message':
+                const messageData = {
+                    content: args.message,
+                    agentId: args.agentId
+                };
+                const sentMessage = await this.conversationsApi.conversationsMessagesPost(messageData);
+                return {
+                    content: [{ type: 'text', text: `Message sent: ${JSON.stringify(sentMessage.body, null, 2)}` }]
+                };
+            case 'update_conversation':
+                const updateData = {
+                    status: args.status,
+                    agentId: args.agentId
+                };
+                await this.conversationsApi.conversationsMessagesIdPut(args.conversationId, updateData);
+                return {
+                    content: [{ type: 'text', text: `Conversation ${args.conversationId} updated successfully` }]
                 };
             default:
                 throw new Error(`Unknown conversation operation: ${operation}`);
@@ -989,6 +1498,13 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: `Webhook created with ID: ${newWebhook.body.id}` }]
                 };
+            case 'export_history':
+                const exportHistory = new brevo.ExportWebhooksHistory();
+                Object.assign(exportHistory, args.exportData);
+                const historyExport = await this.webhooksApi.exportWebhooksHistory(exportHistory);
+                return {
+                    content: [{ type: 'text', text: `Webhook history export initiated: ${JSON.stringify(historyExport.body, null, 2)}` }]
+                };
             default:
                 throw new Error(`Unknown webhook operation: ${operation}`);
         }
@@ -1007,10 +1523,65 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: JSON.stringify(senders.body, null, 2) }]
                 };
+            case 'create_sender':
+                const createSender = new brevo.CreateSender();
+                Object.assign(createSender, args.senderData);
+                const newSender = await this.sendersApi.createSender(createSender);
+                return {
+                    content: [{ type: 'text', text: `Sender created: ${JSON.stringify(newSender.body, null, 2)}` }]
+                };
+            case 'update_sender':
+                const updateSender = new brevo.UpdateSender();
+                Object.assign(updateSender, args.senderData);
+                await this.sendersApi.updateSender(args.senderId, updateSender);
+                return {
+                    content: [{ type: 'text', text: `Sender ${args.senderId} updated successfully` }]
+                };
+            case 'delete_sender':
+                await this.sendersApi.deleteSender(args.senderId);
+                return {
+                    content: [{ type: 'text', text: `Sender ${args.senderId} deleted successfully` }]
+                };
             case 'get_domains':
                 const domains = await this.domainsApi.getDomains();
                 return {
                     content: [{ type: 'text', text: JSON.stringify(domains.body, null, 2) }]
+                };
+            case 'create_domain':
+                const createDomain = new brevo.CreateDomain();
+                createDomain.name = args.domain;
+                const newDomain = await this.domainsApi.createDomain(createDomain);
+                return {
+                    content: [{ type: 'text', text: `Domain created: ${JSON.stringify(newDomain.body, null, 2)}` }]
+                };
+            case 'validate_domain':
+                await this.domainsApi.authenticateDomain(args.domain);
+                return {
+                    content: [{ type: 'text', text: `Domain ${args.domain} validated successfully` }]
+                };
+            case 'get_folders':
+                const folders = await this.contactsApi.getFolders(args.limit || 50, args.offset || 0);
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(folders.body, null, 2) }]
+                };
+            case 'create_folder':
+                const createFolder = new brevo.CreateUpdateFolder();
+                Object.assign(createFolder, args.folderData);
+                const newFolder = await this.contactsApi.createFolder(createFolder);
+                return {
+                    content: [{ type: 'text', text: `Folder created with ID: ${newFolder.body.id}` }]
+                };
+            case 'update_folder':
+                const updateFolder = new brevo.CreateUpdateFolder();
+                Object.assign(updateFolder, args.folderData);
+                await this.contactsApi.updateFolder(args.folderId, updateFolder);
+                return {
+                    content: [{ type: 'text', text: `Folder ${args.folderId} updated successfully` }]
+                };
+            case 'delete_folder':
+                await this.contactsApi.deleteFolder(args.folderId);
+                return {
+                    content: [{ type: 'text', text: `Folder ${args.folderId} deleted successfully` }]
                 };
             default:
                 throw new Error(`Unknown account operation: ${operation}`);
@@ -1034,6 +1605,81 @@ class BrevoMCPServer {
                 const newOrder = await this.ecommerceApi.createOrder(order);
                 return {
                     content: [{ type: 'text', text: `Order created: ${JSON.stringify(newOrder.body, null, 2)}` }]
+                };
+            case 'get_products':
+                const products = await this.ecommerceApi.getProducts({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(products.body, null, 2) }]
+                };
+            case 'create_product':
+                const product = new brevo.CreateProductModel();
+                Object.assign(product, args.productData);
+                const newProduct = await this.ecommerceApi.createProduct(product);
+                return {
+                    content: [{ type: 'text', text: `Product created: ${JSON.stringify(newProduct.body, null, 2)}` }]
+                };
+            case 'update_product':
+                const updateProduct = new brevo.CreateProductModel();
+                Object.assign(updateProduct, args.productData);
+                await this.ecommerceApi.updateProduct(args.productId, updateProduct);
+                return {
+                    content: [{ type: 'text', text: `Product ${args.productId} updated successfully` }]
+                };
+            case 'delete_product':
+                await this.ecommerceApi.deleteProduct(args.productId);
+                return {
+                    content: [{ type: 'text', text: `Product ${args.productId} deleted successfully` }]
+                };
+            case 'get_categories':
+                const categories = await this.ecommerceApi.getCategories({
+                    limit: args.limit || 50,
+                    offset: args.offset || 0
+                });
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(categories.body, null, 2) }]
+                };
+            case 'create_category':
+                const category = new brevo.CreateCategoryModel();
+                Object.assign(category, args.categoryData);
+                const newCategory = await this.ecommerceApi.createCategory(category);
+                return {
+                    content: [{ type: 'text', text: `Category created: ${JSON.stringify(newCategory.body, null, 2)}` }]
+                };
+            case 'update_category':
+                const updateCategory = new brevo.CreateCategoryModel();
+                Object.assign(updateCategory, args.categoryData);
+                await this.ecommerceApi.updateCategory(args.categoryId, updateCategory);
+                return {
+                    content: [{ type: 'text', text: `Category ${args.categoryId} updated successfully` }]
+                };
+            case 'delete_category':
+                await this.ecommerceApi.deleteCategory(args.categoryId);
+                return {
+                    content: [{ type: 'text', text: `Category ${args.categoryId} deleted successfully` }]
+                };
+            case 'create_batch_order':
+                const orderBatch = new brevo.OrderBatch();
+                Object.assign(orderBatch, args.orderData);
+                const batchOrderResult = await this.ecommerceApi.createBatchOrder(orderBatch);
+                return {
+                    content: [{ type: 'text', text: `Batch order created: ${JSON.stringify(batchOrderResult.body, null, 2)}` }]
+                };
+            case 'create_update_batch_products':
+                const batchProducts = new brevo.CreateUpdateBatchProducts();
+                Object.assign(batchProducts, args.productData);
+                const batchProductResult = await this.ecommerceApi.createUpdateBatchProducts(batchProducts);
+                return {
+                    content: [{ type: 'text', text: `Batch products processed: ${JSON.stringify(batchProductResult.body, null, 2)}` }]
+                };
+            case 'create_update_batch_category':
+                const batchCategories = new brevo.CreateUpdateBatchCategory();
+                Object.assign(batchCategories, args.categoryData);
+                const batchCategoryResult = await this.ecommerceApi.createUpdateBatchCategory(batchCategories);
+                return {
+                    content: [{ type: 'text', text: `Batch categories processed: ${JSON.stringify(batchCategoryResult.body, null, 2)}` }]
                 };
             // Coupon operations
             case 'get_coupon_collections':
@@ -1221,6 +1867,27 @@ class BrevoMCPServer {
                 return {
                     content: [{ type: 'text', text: `Note ${args.noteId} deleted successfully` }]
                 };
+            // Additional CRM operations
+            case 'get_company_attributes':
+                const companyAttributes = await this.companiesApi.getCompaniesAttributes();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(companyAttributes.body, null, 2) }]
+                };
+            case 'get_deal_attributes':
+                const dealAttributes = await this.dealsApi.getDealsAttributes();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(dealAttributes.body, null, 2) }]
+                };
+            case 'get_pipelines':
+                const pipelines = await this.dealsApi.getPipelines();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(pipelines.body, null, 2) }]
+                };
+            case 'get_task_types':
+                const taskTypes = await this.tasksApi.getTaskTypes();
+                return {
+                    content: [{ type: 'text', text: JSON.stringify(taskTypes.body, null, 2) }]
+                };
             default:
                 throw new Error(`Unknown CRM operation: ${operation}`);
         }
@@ -1381,6 +2048,111 @@ class BrevoMCPServer {
             default:
                 throw new Error(`Unknown enterprise operation: ${operation}`);
         }
+    }
+    // Bulk contact import handler
+    async handleBulkContactImport(args) {
+        const { text, listId, updateExisting = true, dryRun = false } = args;
+        try {
+            // Parse the input text to extract contacts
+            const contacts = this.parseContactText(text);
+            if (contacts.length === 0) {
+                return {
+                    content: [{ type: 'text', text: 'No valid contacts found in the provided text.' }]
+                };
+            }
+            if (dryRun) {
+                return {
+                    content: [{
+                            type: 'text',
+                            text: `DRY RUN: Would import ${contacts.length} contacts:\n${JSON.stringify(contacts, null, 2)}`
+                        }]
+                };
+            }
+            // Create the import request
+            const importRequest = new brevo.RequestContactImport();
+            importRequest.jsonBody = contacts;
+            importRequest.updateExistingContacts = updateExisting;
+            if (listId) {
+                importRequest.listIds = [listId];
+            }
+            // Execute the import
+            const importResult = await this.contactsApi.importContacts(importRequest);
+            return {
+                content: [{
+                        type: 'text',
+                        text: `Bulk import initiated successfully! Process ID: ${importResult.body.processId}\nImported ${contacts.length} contacts.`
+                    }]
+            };
+        }
+        catch (error) {
+            throw new Error(`Bulk import failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // Helper method to parse contact text
+    parseContactText(text) {
+        const contacts = [];
+        const lines = text.split('\n').filter(line => line.trim());
+        for (const line of lines) {
+            const contact = this.extractContactFromLine(line.trim());
+            if (contact) {
+                contacts.push(contact);
+            }
+        }
+        return contacts;
+    }
+    // Helper method to extract contact info from a single line
+    extractContactFromLine(line) {
+        // Email regex
+        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+        const phoneRegex = /(\+?[\d\s\-\(\)]{10,})/g;
+        const emails = line.match(emailRegex);
+        if (!emails || emails.length === 0) {
+            return null; // Skip lines without email
+        }
+        const email = emails[0];
+        const phones = line.match(phoneRegex);
+        // Extract name (everything before email or in quotes/brackets)
+        let name = '';
+        let firstName = '';
+        let lastName = '';
+        // Try to extract name from various formats
+        const nameMatch = line.match(/^([^<@]+)<?/) || line.match(/["']([^"']+)["']/) || line.match(/\(([^)]+)\)/);
+        if (nameMatch) {
+            name = nameMatch[1].trim();
+            const nameParts = name.split(/\s+/);
+            if (nameParts.length >= 2) {
+                firstName = nameParts[0];
+                lastName = nameParts.slice(1).join(' ');
+            }
+            else if (nameParts.length === 1) {
+                firstName = nameParts[0];
+            }
+        }
+        // Build contact object
+        const contact = { email };
+        const attributes = {};
+        if (firstName)
+            attributes.FIRSTNAME = firstName;
+        if (lastName)
+            attributes.LASTNAME = lastName;
+        if (phones && phones.length > 0) {
+            const phone = phones[0].replace(/[\s\-\(\)]/g, '');
+            if (phone.startsWith('+')) {
+                attributes.SMS = phone;
+            }
+            else {
+                attributes.SMS = phone;
+            }
+        }
+        // Extract company (look for patterns like "at Company" or "@ Company")
+        const companyMatch = line.match(/(?:at|@)\s+([^,<@]+)/i);
+        if (companyMatch) {
+            attributes.COMPANY = companyMatch[1].trim();
+        }
+        if (Object.keys(attributes).length > 0) {
+            contact.attributes = attributes;
+        }
+        return contact;
     }
     async run() {
         try {
