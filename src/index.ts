@@ -128,9 +128,8 @@ class BrevoMCPServer {
     ];
 
     apis.forEach(api => {
-      const apiKeyAuth = api.authentications['api-key'];
-      if (apiKeyAuth) {
-        apiKeyAuth.apiKey = this.apiKey;
+      if (api.authentications && api.authentications.apiKey) {
+        api.authentications.apiKey.apiKey = this.apiKey;
       }
     });
   }
