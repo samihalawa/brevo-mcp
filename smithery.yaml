@@ -7,16 +7,16 @@ startCommand:
     properties:
       apiKey:
         type: string
-        description: "Brevo API key for authentication (required)"
+        description: "Brevo API key for authentication (get from https://app.brevo.com/settings/keys/api - required)"
       defaultSenderEmail:
         type: string
-        description: "Default sender email address"
+        description: "Default sender email address (must be verified in Brevo, e.g., your-email@yourdomain.com)"
       defaultSenderName:
         type: string
-        description: "Default sender name"
+        description: "Default sender name for emails (e.g., 'Your Company Name' or 'John Doe')"
       debug:
         type: boolean
-        description: "Enable debug mode for additional logging"
+        description: "Enable debug mode for additional logging (true/false)"
         default: false
   commandFunction: |-
     (config) => ({
@@ -29,3 +29,15 @@ startCommand:
         DEBUG: config.debug ? 'true' : 'false'
       }
     })
+exampleConfig:
+  apiKey: "xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxx"
+  defaultSenderEmail: "noreply@yourdomain.com"
+  defaultSenderName: "Your App Name"
+  debug: false
+description: "📧 Brevo MCP Server - Send transactional emails, SMS, and manage contacts through Brevo API"
+tags:
+  - "email"
+  - "sms"
+  - "marketing"
+  - "transactional"
+  - "brevo"
