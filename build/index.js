@@ -24,9 +24,9 @@ class BrevoMCPServer {
                 name: process.env.BREVO_DEFAULT_SENDER_NAME || 'Brevo Sender'
             };
         }
+        // Note: API key is optional for tool listing, but required for tool execution
         if (!this.apiKey) {
-            console.error('BREVO_API_KEY environment variable is required');
-            process.exit(1);
+            console.error('Warning: BREVO_API_KEY not provided. Tools will be available but will fail when executed without authentication.');
         }
         this.initializeBrevoAPIs();
         this.setupToolHandlers();
