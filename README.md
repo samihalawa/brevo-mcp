@@ -1,4 +1,5 @@
 # Brevo MCP Server
+[![smithery badge](https://smithery.ai/badge/@samihalawa/brevo-mcp)](https://smithery.ai/server/@samihalawa/brevo-mcp)
 
 📧 **Complete Brevo API Integration for Claude & Smithery using Official SDK**
 
