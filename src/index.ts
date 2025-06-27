@@ -881,6 +881,93 @@ class BrevoMCPServer {
               required: ['text'],
             },
           },
+          {
+            name: 'contact_with_list',
+            description: 'Create contact and add to list in one call - universally useful combination',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                email: {
+                  type: 'string',
+                  description: 'Contact email address',
+                },
+                firstName: {
+                  type: 'string',
+                  description: 'Contact first name',
+                },
+                lastName: {
+                  type: 'string',
+                  description: 'Contact last name',
+                },
+                attributes: {
+                  type: 'object',
+                  description: 'Contact custom attributes',
+                },
+                listIds: {
+                  type: 'array',
+                  items: { type: 'number' },
+                  description: 'Lists to add contact to',
+                },
+                updateExisting: {
+                  type: 'boolean',
+                  description: 'Update contact if already exists',
+                  default: true,
+                },
+              },
+              required: ['email', 'listIds'],
+            },
+          },
+          {
+            name: 'email_with_tracking',
+            description: 'Send email and return tracking info immediately - universally useful combination',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                to: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      email: { type: 'string' },
+                      name: { type: 'string' },
+                    },
+                    required: ['email'],
+                  },
+                  description: 'Recipients list',
+                },
+                subject: {
+                  type: 'string',
+                  description: 'Email subject',
+                },
+                htmlContent: {
+                  type: 'string',
+                  description: 'Email HTML content',
+                },
+                templateId: {
+                  type: 'number',
+                  description: 'Template ID to use instead of content',
+                },
+                params: {
+                  type: 'object',
+                  description: 'Template parameters',
+                },
+                sender: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string' },
+                    name: { type: 'string' },
+                  },
+                  description: 'Sender information',
+                },
+                includeStats: {
+                  type: 'boolean',
+                  description: 'Include detailed tracking stats',
+                  default: true,
+                },
+              },
+              required: ['to'],
+            },
+          },
         ],
       };
     });
