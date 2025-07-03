@@ -1066,6 +1066,72 @@ class BrevoMCPServer {
             name: 'Bulk Contact Import Helper',
             description: 'Intelligent helper for importing contacts from pasted text',
             mimeType: 'application/json'
+          },
+          {
+            uri: 'brevo://workflows/email-marketing',
+            name: 'Email Marketing Workflow Guide',
+            description: 'Step-by-step guide for complete email marketing campaigns',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'brevo://workflows/automation',
+            name: 'Marketing Automation Guide',
+            description: 'Best practices for setting up automated email sequences',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'brevo://templates/transactional',
+            name: 'Transactional Email Templates',
+            description: 'Production-ready templates for common transactional emails',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'brevo://templates/marketing',
+            name: 'Marketing Email Templates',
+            description: 'Professional marketing email templates with best practices',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'brevo://webhooks/guide',
+            name: 'Webhook Integration Guide',
+            description: 'Complete guide to setting up and handling Brevo webhooks',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'brevo://webhooks/events',
+            name: 'Webhook Events Reference',
+            description: 'All available webhook events with payload examples',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'brevo://api/rate-limits',
+            name: 'API Rate Limits & Best Practices',
+            description: 'Rate limiting guidelines and optimization strategies',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'brevo://data-streams/setup',
+            name: 'Data Streams Configuration',
+            description: 'Guide to setting up real-time data streams and monitoring',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'brevo://schemas/campaign',
+            name: 'Campaign Schema',
+            description: 'Complete schema for email and SMS campaigns',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'brevo://schemas/webhook',
+            name: 'Webhook Configuration Schema',
+            description: 'Schema for webhook setup and event handling',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'brevo://troubleshooting/common-issues',
+            name: 'Common Issues & Solutions',
+            description: 'Troubleshooting guide for common Brevo integration problems',
+            mimeType: 'text/markdown'
           }
         ]
       };
@@ -1257,6 +1323,1271 @@ class BrevoMCPServer {
                 },
                 example: "John Doe <john@example.com>, Jane Smith (jane@example.com), Bob Wilson bob@test.com +1234567890"
               }, null, 2)
+            }]
+          };
+
+        case 'brevo://workflows/email-marketing':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'text/markdown',
+              text: `# Email Marketing Workflow Guide
+
+## Overview
+This guide walks you through creating effective email marketing campaigns using Brevo's comprehensive tools.
+
+## 1. Audience Preparation
+\`\`\`javascript
+// Get contact lists
+const lists = await brevo.contacts({ operation: 'get_lists' });
+
+// Create targeted list
+const newList = await brevo.contacts({ 
+  operation: 'create_list',
+  listData: {
+    name: 'Product Launch Campaign',
+    folderId: 1
+  }
+});
+\`\`\`
+
+## 2. Content Creation
+\`\`\`javascript
+// Create email template
+const template = await brevo.email({
+  operation: 'create_template',
+  templateData: {
+    templateName: 'Product Launch Email',
+    subject: 'Introducing {{contact.FIRSTNAME}} - Our Latest Innovation!',
+    htmlContent: '<!DOCTYPE html>...',
+    sender: { name: 'Your Company', email: 'marketing@company.com' }
+  }
+});
+\`\`\`
+
+## 3. Campaign Setup
+\`\`\`javascript
+// Create email campaign
+const campaign = await brevo.campaigns({
+  operation: 'create_email_campaign',
+  campaignData: {
+    name: 'Product Launch Campaign',
+    subject: 'Revolutionary Product - Limited Time Offer',
+    templateId: template.id,
+    listIds: [newList.id],
+    scheduledAt: '2024-12-01T10:00:00Z'
+  }
+});
+\`\`\`
+
+## 4. Performance Tracking
+\`\`\`javascript
+// Get campaign statistics
+const stats = await brevo.campaigns({
+  operation: 'get_campaign_statistics',
+  campaignId: campaign.id
+});
+
+// Monitor email events
+const events = await brevo.email({
+  operation: 'get_events',
+  startDate: '2024-12-01',
+  endDate: '2024-12-07'
+});
+\`\`\`
+
+## Best Practices
+- Always test with small segments first
+- Use personalization tokens: {{contact.FIRSTNAME}}, {{contact.COMPANY}}
+- Monitor deliverability and engagement metrics
+- A/B test subject lines and content
+- Maintain clean contact lists`
+            }]
+          };
+
+        case 'brevo://workflows/automation':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'text/markdown',
+              text: `# Marketing Automation Guide
+
+## Automated Email Sequences
+Set up intelligent email sequences that respond to user behavior.
+
+## 1. Welcome Series Setup
+\`\`\`javascript
+// Create welcome email template
+const welcomeTemplate = await brevo.email({
+  operation: 'create_template',
+  templateData: {
+    templateName: 'Welcome Series - Email 1',
+    subject: 'Welcome {{contact.FIRSTNAME}}! Here's what's next...',
+    htmlContent: \`
+      <h1>Welcome to {{contact.COMPANY}}!</h1>
+      <p>Thank you for joining us. Here's your personalized onboarding:</p>
+      <ul>
+        <li>Complete your profile</li>
+        <li>Explore our features</li>
+        <li>Connect with our team</li>
+      </ul>
+    \`,
+    tag: 'welcome-series'
+  }
+});
+\`\`\`
+
+## 2. Behavioral Triggers
+\`\`\`javascript
+// Track user events for automation triggers
+const userEvent = await brevo.events({
+  operation: 'create_event',
+  email: 'user@example.com',
+  eventName: 'profile_completed',
+  eventData: {
+    completion_date: new Date().toISOString(),
+    completion_percentage: 100
+  }
+});
+\`\`\`
+
+## 3. Webhook-Based Automation
+\`\`\`javascript
+// Set up webhook for real-time automation
+const webhook = await brevo.webhooks({
+  operation: 'create_webhook',
+  url: 'https://yourapp.com/webhook/brevo',
+  events: ['delivered', 'opened', 'clicked', 'unsubscribed'],
+  description: 'Automation trigger webhook'
+});
+\`\`\`
+
+## 4. Multi-Channel Automation
+\`\`\`javascript
+// SMS follow-up for non-openers
+const smsFollow = await brevo.sms({
+  operation: 'send',
+  recipient: '+1234567890',
+  content: 'Hi {{contact.FIRSTNAME}}, did you see our email? Check it out: link.com',
+  sender: 'YourBrand'
+});
+\`\`\`
+
+## Advanced Automation Patterns
+- Lead nurturing sequences
+- Abandoned cart recovery
+- Re-engagement campaigns
+- Post-purchase follow-ups
+- Birthday/anniversary emails`
+            }]
+          };
+
+        case 'brevo://templates/transactional':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify({
+                "passwordReset": {
+                  "templateName": "Password Reset",
+                  "subject": "Reset your password for {{contact.COMPANY}}",
+                  "htmlContent": `<!DOCTYPE html>
+<html>
+<head><title>Password Reset</title></head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <h1 style="color: #333;">Password Reset Request</h1>
+    <p>Hello {{contact.FIRSTNAME}},</p>
+    <p>We received a request to reset your password. Click the button below to proceed:</p>
+    <a href="{{params.reset_url}}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 20px 0;">Reset Password</a>
+    <p>This link will expire in 24 hours for security reasons.</p>
+    <p>If you didn't request this reset, please ignore this email.</p>
+    <p>Best regards,<br>{{contact.COMPANY}} Team</p>
+  </div>
+</body>
+</html>`,
+                  "textContent": "Hello {{contact.FIRSTNAME}}, we received a password reset request. Visit: {{params.reset_url}}",
+                  "tag": "password-reset"
+                },
+                "emailVerification": {
+                  "templateName": "Email Verification",
+                  "subject": "Please verify your email address",
+                  "htmlContent": `<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <h1 style="color: #28a745;">Verify Your Email</h1>
+    <p>Hello {{contact.FIRSTNAME}},</p>
+    <p>Please verify your email address by clicking the button below:</p>
+    <a href="{{params.verification_url}}" style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 20px 0;">Verify Email</a>
+    <p>Verification code: <strong>{{params.verification_code}}</strong></p>
+  </div>
+</body>
+</html>`,
+                  "tag": "verification"
+                },
+                "orderConfirmation": {
+                  "templateName": "Order Confirmation",
+                  "subject": "Order #{{params.order_id}} confirmed",
+                  "htmlContent": `<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <h1 style="color: #333;">Order Confirmed!</h1>
+    <p>Hello {{contact.FIRSTNAME}},</p>
+    <p>Your order #{{params.order_id}} has been confirmed.</p>
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0;">
+      <h3>Order Details:</h3>
+      <p><strong>Order ID:</strong> {{params.order_id}}</p>
+      <p><strong>Total:</strong> {{params.total_amount}}</p>
+      <p><strong>Estimated Delivery:</strong> {{params.delivery_date}}</p>
+    </div>
+    <p>Track your order: <a href="{{params.tracking_url}}">{{params.tracking_url}}</a></p>
+  </div>
+</body>
+</html>`,
+                  "tag": "order-confirmation"
+                }
+              }, null, 2)
+            }]
+          };
+
+        case 'brevo://templates/marketing':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify({
+                "newsletter": {
+                  "templateName": "Monthly Newsletter",
+                  "subject": "{{contact.FIRSTNAME}}, here's what's new this month",
+                  "htmlContent": `<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+  <div style="max-width: 600px; margin: 0 auto; background: white;">
+    <header style="background: #007bff; color: white; padding: 20px; text-align: center;">
+      <h1>Monthly Update</h1>
+    </header>
+    <div style="padding: 20px;">
+      <h2>Hello {{contact.FIRSTNAME}}!</h2>
+      <p>Here are the highlights from this month:</p>
+      
+      <div style="border-left: 4px solid #007bff; padding-left: 15px; margin: 20px 0;">
+        <h3>🚀 New Feature Launch</h3>
+        <p>We've launched our revolutionary new dashboard that makes managing your account easier than ever.</p>
+      </div>
+      
+      <div style="border-left: 4px solid #28a745; padding-left: 15px; margin: 20px 0;">
+        <h3>📊 Your Account Stats</h3>
+        <p>You've saved {{params.time_saved}} hours this month using our platform!</p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{params.cta_url}}" style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block;">Explore New Features</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+                  "tag": "newsletter"
+                },
+                "productLaunch": {
+                  "templateName": "Product Launch Announcement",
+                  "subject": "🎉 Introducing {{params.product_name}} - Just for You!",
+                  "htmlContent": `<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; background: white;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center;">
+      <h1 style="margin: 0; font-size: 32px;">🎉 Big News!</h1>
+      <p style="font-size: 18px; margin: 10px 0 0 0;">We've built something amazing for you</p>
+    </div>
+    <div style="padding: 30px 20px;">
+      <h2>Hello {{contact.FIRSTNAME}},</h2>
+      <p style="font-size: 16px; line-height: 1.6;">We're thrilled to introduce <strong>{{params.product_name}}</strong> - designed specifically with customers like you in mind.</p>
+      
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+        <h3 style="color: #333; margin-top: 0;">What makes it special:</h3>
+        <ul style="color: #555; line-height: 1.8;">
+          <li>{{params.feature_1}}</li>
+          <li>{{params.feature_2}}</li>
+          <li>{{params.feature_3}}</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{params.product_url}}" style="background: #28a745; color: white; padding: 15px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-size: 16px; font-weight: bold;">Try It Now</a>
+      </div>
+      
+      <p style="color: #666; font-size: 14px;">Limited time: Get 30% off with code LAUNCH30</p>
+    </div>
+  </div>
+</body>
+</html>`,
+                  "tag": "product-launch"
+                }
+              }, null, 2)
+            }]
+          };
+
+        case 'brevo://webhooks/guide':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'text/markdown',
+              text: `# Brevo Webhook Integration Guide
+
+## Overview
+Webhooks allow real-time notifications when events occur in your Brevo account.
+
+## 1. Setting Up Webhooks
+
+\`\`\`javascript
+// Create a webhook for email events
+const webhook = await brevo.webhooks({
+  operation: 'create_webhook',
+  url: 'https://your-app.com/webhook/brevo',
+  events: [
+    'delivered',    // Email successfully delivered
+    'opened',       // Email opened by recipient
+    'clicked',      // Link clicked in email
+    'bounced',      // Email bounced
+    'unsubscribed', // User unsubscribed
+    'complaint'     // Spam complaint
+  ],
+  description: 'Main email tracking webhook',
+  type: 'transactional'
+});
+\`\`\`
+
+## 2. Webhook Endpoint Implementation
+
+### Express.js Example
+\`\`\`javascript
+const express = require('express');
+const crypto = require('crypto');
+const app = express();
+
+app.use(express.json());
+
+// Webhook verification (recommended)
+function verifyWebhook(payload, signature, secret) {
+  const hash = crypto.createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  return hash === signature;
+}
+
+app.post('/webhook/brevo', (req, res) => {
+  const payload = JSON.stringify(req.body);
+  const signature = req.headers['x-brevo-signature'];
+  
+  // Verify webhook (if you set up webhook secret)
+  if (!verifyWebhook(payload, signature, process.env.BREVO_WEBHOOK_SECRET)) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  const event = req.body;
+  
+  switch(event.event) {
+    case 'delivered':
+      console.log(\`Email delivered to \${event.email}\`);
+      break;
+    case 'opened':
+      console.log(\`Email opened by \${event.email}\`);
+      // Trigger follow-up automation
+      break;
+    case 'clicked':
+      console.log(\`Link clicked: \${event.link}\`);
+      // Track conversion
+      break;
+    case 'bounced':
+      console.log(\`Email bounced: \${event.reason}\`);
+      // Update contact status
+      break;
+  }
+  
+  res.status(200).send('OK');
+});
+\`\`\`
+
+## 3. Event Processing Patterns
+
+### Automated Follow-ups
+\`\`\`javascript
+app.post('/webhook/brevo', async (req, res) => {
+  const { event, email, ts } = req.body;
+  
+  if (event === 'opened') {
+    // Wait 2 hours, then send follow-up if no click
+    setTimeout(async () => {
+      const hasClicked = await checkIfUserClicked(email, ts);
+      if (!hasClicked) {
+        await sendFollowUpEmail(email);
+      }
+    }, 2 * 60 * 60 * 1000);
+  }
+  
+  res.status(200).send('OK');
+});
+\`\`\`
+
+### Contact Scoring
+\`\`\`javascript
+const scoringRules = {
+  opened: 1,
+  clicked: 5,
+  replied: 10,
+  unsubscribed: -20
+};
+
+app.post('/webhook/brevo', async (req, res) => {
+  const { event, email } = req.body;
+  const score = scoringRules[event] || 0;
+  
+  await updateContactScore(email, score);
+  res.status(200).send('OK');
+});
+\`\`\`
+
+## 4. Error Handling & Retry Logic
+
+\`\`\`javascript
+app.post('/webhook/brevo', async (req, res) => {
+  try {
+    await processWebhookEvent(req.body);
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Webhook processing failed:', error);
+    // Return 5xx for Brevo to retry
+    res.status(500).send('Processing failed');
+  }
+});
+\`\`\`
+
+## 5. Testing Webhooks
+
+\`\`\`javascript
+// List webhook delivery attempts
+const attempts = await brevo.webhooks({
+  operation: 'list_webhook_attempts',
+  webhookId: webhook.id
+});
+
+// Check webhook status
+const webhookStatus = await brevo.webhooks({
+  operation: 'get_webhook',
+  webhookId: webhook.id
+});
+\`\`\`
+
+## Best Practices
+- Always respond with 200 status for successful processing
+- Implement webhook verification for security
+- Use idempotency keys to handle duplicate events
+- Set up monitoring for webhook failures
+- Process webhooks asynchronously for heavy operations`
+            }]
+          };
+
+        case 'brevo://webhooks/events':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify({
+                "email_events": {
+                  "delivered": {
+                    "description": "Email successfully delivered to recipient",
+                    "payload_example": {
+                      "event": "delivered",
+                      "email": "user@example.com",
+                      "id": 123456,
+                      "date": "2024-01-15T10:30:00Z",
+                      "message-id": "<message.id@brevo.com>",
+                      "subject": "Welcome to our service"
+                    }
+                  },
+                  "opened": {
+                    "description": "Email opened by recipient",
+                    "payload_example": {
+                      "event": "opened",
+                      "email": "user@example.com",
+                      "id": 123456,
+                      "date": "2024-01-15T10:35:00Z",
+                      "message-id": "<message.id@brevo.com>",
+                      "ip": "192.168.1.1",
+                      "user_agent": "Mozilla/5.0..."
+                    }
+                  },
+                  "clicked": {
+                    "description": "Link clicked in email",
+                    "payload_example": {
+                      "event": "clicked",
+                      "email": "user@example.com",
+                      "id": 123456,
+                      "date": "2024-01-15T10:40:00Z",
+                      "link": "https://example.com/product",
+                      "ip": "192.168.1.1"
+                    }
+                  },
+                  "bounced": {
+                    "description": "Email bounced (hard or soft bounce)",
+                    "payload_example": {
+                      "event": "bounced",
+                      "email": "user@example.com",
+                      "id": 123456,
+                      "date": "2024-01-15T10:32:00Z",
+                      "reason": "mailbox_full",
+                      "code": 550
+                    }
+                  }
+                },
+                "sms_events": {
+                  "delivered": {
+                    "description": "SMS successfully delivered",
+                    "payload_example": {
+                      "event": "delivered",
+                      "phone_number": "+1234567890",
+                      "id": 789012,
+                      "date": "2024-01-15T10:30:00Z",
+                      "reference": "sms_ref_123"
+                    }
+                  }
+                },
+                "contact_events": {
+                  "contact_created": {
+                    "description": "New contact created",
+                    "payload_example": {
+                      "event": "contact_created",
+                      "email": "new@example.com",
+                      "contact_id": 456789,
+                      "date": "2024-01-15T10:25:00Z",
+                      "list_ids": [1, 5]
+                    }
+                  },
+                  "contact_updated": {
+                    "description": "Contact information updated",
+                    "payload_example": {
+                      "event": "contact_updated", 
+                      "email": "user@example.com",
+                      "contact_id": 456789,
+                      "date": "2024-01-15T10:28:00Z",
+                      "updated_fields": ["FIRSTNAME", "COMPANY"]
+                    }
+                  }
+                }
+              }, null, 2)
+            }]
+          };
+
+        case 'brevo://api/rate-limits':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'text/markdown',
+              text: `# Brevo API Rate Limits & Best Practices
+
+## Current Rate Limits
+
+### Email API
+- **Transactional Emails**: 300 emails/minute
+- **Template Operations**: 100 requests/minute
+- **Contact Operations**: 100 requests/minute
+
+### Contacts API
+- **Contact CRUD**: 100 requests/minute
+- **Bulk Import**: 5 imports/hour
+- **List Operations**: 50 requests/minute
+
+### Campaign API
+- **Campaign Management**: 50 requests/minute
+- **Statistics**: 100 requests/minute
+
+## Rate Limit Headers
+Monitor these headers in API responses:
+\`\`\`
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640995200
+\`\`\`
+
+## Best Practices
+
+### 1. Implement Exponential Backoff
+\`\`\`javascript
+async function makeBrevoRequest(requestFn, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      if (error.status === 429) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+\`\`\`
+
+### 2. Batch Operations
+\`\`\`javascript
+// Instead of individual contact updates
+for (const contact of contacts) {
+  await updateContact(contact); // ❌ Inefficient
+}
+
+// Use bulk operations
+await brevo.contacts({
+  operation: 'bulk_update',
+  contacts: contacts // ✅ Efficient
+});
+\`\`\`
+
+### 3. Use Webhooks for Real-time Data
+\`\`\`javascript
+// Instead of polling for email events
+setInterval(async () => {
+  const events = await getEmailEvents(); // ❌ Inefficient
+}, 30000);
+
+// Set up webhooks for real-time notifications ✅
+const webhook = await brevo.webhooks({
+  operation: 'create_webhook',
+  url: 'https://your-app.com/webhook',
+  events: ['delivered', 'opened', 'clicked']
+});
+\`\`\`
+
+### 4. Cache Frequently Accessed Data
+\`\`\`javascript
+// Cache contact lists, templates, etc.
+const cache = new Map();
+
+async function getContactLists() {
+  if (cache.has('lists')) {
+    return cache.get('lists');
+  }
+  
+  const lists = await brevo.contacts({ operation: 'get_lists' });
+  cache.set('lists', lists, { ttl: 300000 }); // 5 minutes
+  return lists;
+}
+\`\`\`
+
+### 5. Monitor Your Usage
+\`\`\`javascript
+// Track API usage
+let requestCount = 0;
+const startTime = Date.now();
+
+function trackApiCall() {
+  requestCount++;
+  const elapsed = Date.now() - startTime;
+  const rate = requestCount / (elapsed / 60000); // requests per minute
+  
+  if (rate > 80) { // 80% of 100 req/min limit
+    console.warn('Approaching rate limit:', rate);
+  }
+}
+\`\`\`
+
+## Error Handling
+
+### Rate Limit Response
+\`\`\`javascript
+{
+  "code": "too_many_requests",
+  "message": "Rate limit exceeded",
+  "details": {
+    "reset_time": 1640995200,
+    "retry_after": 60
+  }
+}
+\`\`\`
+
+### Handling Strategy
+\`\`\`javascript
+if (error.status === 429) {
+  const retryAfter = error.headers['retry-after'] || 60;
+  await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+  // Retry the request
+}
+\`\`\`
+
+## Account Limits
+- **Free Plan**: 300 emails/day
+- **Starter Plan**: 20,000 emails/month
+- **Business Plan**: 40,000 emails/month
+- **Enterprise Plan**: Custom limits`
+            }]
+          };
+
+        case 'brevo://data-streams/setup':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'text/markdown',
+              text: `# Data Streams Configuration Guide
+
+## Real-time Data Monitoring with Brevo
+
+### 1. Webhook-Based Data Streams
+
+\`\`\`javascript
+// Set up comprehensive event monitoring
+const dataStream = await brevo.webhooks({
+  operation: 'create_webhook',
+  url: 'https://your-app.com/stream/brevo',
+  events: [
+    // Email events
+    'delivered', 'opened', 'clicked', 'bounced', 'unsubscribed',
+    // Contact events  
+    'contact_created', 'contact_updated', 'contact_deleted',
+    // Campaign events
+    'campaign_sent', 'campaign_delivered'
+  ],
+  description: 'Real-time data stream'
+});
+\`\`\`
+
+### 2. Event Stream Processing
+
+\`\`\`javascript
+const EventEmitter = require('events');
+const streamProcessor = new EventEmitter();
+
+// Process incoming webhook events
+app.post('/stream/brevo', (req, res) => {
+  const event = req.body;
+  
+  // Emit event for real-time processing
+  streamProcessor.emit('brevo-event', event);
+  
+  // Store for batch processing
+  eventQueue.push(event);
+  
+  res.status(200).send('OK');
+});
+
+// Real-time event handlers
+streamProcessor.on('brevo-event', (event) => {
+  switch(event.event) {
+    case 'opened':
+      updateContactEngagement(event.email, 'email_opened');
+      break;
+    case 'clicked':
+      trackConversion(event.email, event.link);
+      break;
+    case 'contact_created':
+      triggerWelcomeSequence(event.email);
+      break;
+  }
+});
+\`\`\`
+
+### 3. Monitoring & Analytics Setup
+
+\`\`\`javascript
+// Monitor system events
+const monitorEvents = await brevo.webhooks({
+  operation: 'list_events',
+  limit: 100
+});
+
+// Set up automated monitoring
+const monitor = await brevo.webhooks({
+  operation: 'create_webset_monitor', 
+  monitorData: {
+    name: 'Email Performance Monitor',
+    description: 'Track email performance metrics',
+    frequency: 'hourly',
+    conditions: {
+      bounce_rate: { threshold: 5, operator: 'greater_than' },
+      open_rate: { threshold: 20, operator: 'less_than' }
+    }
+  }
+});
+\`\`\`
+
+### 4. Data Export & Backup
+
+\`\`\`javascript
+// Regular data exports
+const exportJob = await brevo.account({
+  operation: 'create_export',
+  exportData: {
+    type: 'contacts',
+    format: 'csv',
+    filters: {
+      modified_since: '2024-01-01T00:00:00Z'
+    }
+  }
+});
+
+// Monitor export status
+const exportStatus = await brevo.account({
+  operation: 'get_export',
+  exportId: exportJob.id
+});
+\`\`\`
+
+### 5. Performance Metrics Dashboard
+
+\`\`\`javascript
+// Collect performance metrics
+const metrics = {
+  email: {
+    sent: 0,
+    delivered: 0, 
+    opened: 0,
+    clicked: 0,
+    bounced: 0
+  },
+  contacts: {
+    created: 0,
+    updated: 0,
+    deleted: 0
+  }
+};
+
+streamProcessor.on('brevo-event', (event) => {
+  // Update metrics
+  if (event.event in metrics.email) {
+    metrics.email[event.event]++;
+  }
+  
+  // Calculate real-time rates
+  const deliveryRate = (metrics.email.delivered / metrics.email.sent) * 100;
+  const openRate = (metrics.email.opened / metrics.email.delivered) * 100;
+  
+  // Alert on low performance
+  if (deliveryRate < 95) {
+    sendAlert('Low delivery rate detected');
+  }
+});
+\`\`\`
+
+## Advanced Streaming Patterns
+
+### Event Aggregation
+\`\`\`javascript
+// Aggregate events by time windows
+const aggregations = {};
+
+function aggregateEvents(event) {
+  const timeWindow = Math.floor(Date.now() / (5 * 60 * 1000)); // 5-minute windows
+  
+  if (!aggregations[timeWindow]) {
+    aggregations[timeWindow] = { count: 0, events: {} };
+  }
+  
+  aggregations[timeWindow].count++;
+  aggregations[timeWindow].events[event.event] = 
+    (aggregations[timeWindow].events[event.event] || 0) + 1;
+}
+\`\`\`
+
+### Stream Filtering
+\`\`\`javascript
+// Filter high-value events
+streamProcessor.on('brevo-event', (event) => {
+  // Only process events from premium contacts
+  if (event.contact_tags?.includes('premium')) {
+    processHighValueEvent(event);
+  }
+  
+  // Filter by geographic region
+  if (event.country === 'US') {
+    processUSEvent(event);
+  }
+});
+\`\`\`
+
+## Monitoring Tools Integration
+
+### Prometheus Metrics
+\`\`\`javascript
+const prometheus = require('prom-client');
+
+const emailMetrics = new prometheus.Counter({
+  name: 'brevo_emails_total',
+  help: 'Total emails processed',
+  labelNames: ['event_type', 'campaign']
+});
+
+streamProcessor.on('brevo-event', (event) => {
+  emailMetrics.inc({ 
+    event_type: event.event,
+    campaign: event.campaign_id 
+  });
+});
+\`\`\`
+
+### Error Tracking
+\`\`\`javascript
+// Track webhook delivery failures
+const failedEvents = [];
+
+app.post('/stream/brevo', (req, res) => {
+  try {
+    processEvent(req.body);
+    res.status(200).send('OK');
+  } catch (error) {
+    failedEvents.push({
+      event: req.body,
+      error: error.message,
+      timestamp: new Date()
+    });
+    res.status(500).send('Error');
+  }
+});
+\`\`\`
+
+## Best Practices
+- Use event queues for high-volume processing
+- Implement circuit breakers for external service calls
+- Monitor webhook delivery success rates
+- Set up alerting for critical events
+- Use database transactions for data consistency`
+            }]
+          };
+
+        case 'brevo://schemas/campaign':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify({
+                "email_campaign": {
+                  "name": "Campaign Name",
+                  "subject": "Email subject line",
+                  "templateId": 123,
+                  "listIds": [1, 2, 3],
+                  "excludedListIds": [4],
+                  "scheduledAt": "2024-12-01T10:00:00Z",
+                  "sender": {
+                    "name": "Sender Name",
+                    "email": "sender@company.com"
+                  },
+                  "replyTo": "reply@company.com",
+                  "toField": "{{contact.FIRSTNAME}} {{contact.LASTNAME}}",
+                  "params": {
+                    "company_name": "Your Company",
+                    "offer_code": "SAVE20"
+                  },
+                  "tags": ["newsletter", "promotion"],
+                  "trackOpens": true,
+                  "trackClicks": true,
+                  "abTesting": {
+                    "enabled": true,
+                    "subjectA": "Subject A",
+                    "subjectB": "Subject B",
+                    "splitPercentage": 50,
+                    "winnerCriteria": "openRate"
+                  }
+                },
+                "sms_campaign": {
+                  "name": "SMS Campaign Name",
+                  "content": "Hello {{contact.FIRSTNAME}}, special offer: {{params.offer_code}}",
+                  "listIds": [1, 2],
+                  "scheduledAt": "2024-12-01T14:00:00Z",
+                  "sender": "YourBrand",
+                  "params": {
+                    "offer_code": "SMS20"
+                  }
+                }
+              }, null, 2)
+            }]
+          };
+
+        case 'brevo://schemas/webhook':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify({
+                "webhook_config": {
+                  "url": "https://your-app.com/webhook/brevo",
+                  "events": [
+                    "delivered",
+                    "opened", 
+                    "clicked",
+                    "bounced",
+                    "unsubscribed",
+                    "complaint",
+                    "contact_created",
+                    "contact_updated"
+                  ],
+                  "description": "Main webhook for event tracking",
+                  "type": "transactional",
+                  "headers": {
+                    "Authorization": "Bearer your-token",
+                    "X-Custom-Header": "value"
+                  },
+                  "auth": {
+                    "type": "basic",
+                    "username": "webhook_user",
+                    "password": "webhook_password"
+                  }
+                },
+                "event_payload_structure": {
+                  "email_event": {
+                    "event": "opened",
+                    "email": "user@example.com",
+                    "id": 123456,
+                    "date": "2024-01-15T10:30:00Z",
+                    "ts": 1642245000,
+                    "message-id": "<message.id@brevo.com>",
+                    "campaign_id": 789,
+                    "subject": "Email subject",
+                    "ip": "192.168.1.1",
+                    "user_agent": "Mozilla/5.0...",
+                    "link": "https://example.com/clicked-link"
+                  },
+                  "contact_event": {
+                    "event": "contact_created",
+                    "email": "new@example.com", 
+                    "contact_id": 456789,
+                    "date": "2024-01-15T10:25:00Z",
+                    "list_ids": [1, 5],
+                    "attributes": {
+                      "FIRSTNAME": "John",
+                      "LASTNAME": "Doe"
+                    }
+                  }
+                }
+              }, null, 2)
+            }]
+          };
+
+        case 'brevo://troubleshooting/common-issues':
+          return {
+            contents: [{
+              uri,
+              mimeType: 'text/markdown',
+              text: `# Common Issues & Solutions
+
+## API Authentication Issues
+
+### Problem: "Invalid API Key" Error
+\`\`\`
+Error: {"code":"unauthorized","message":"Key not found"}
+\`\`\`
+
+**Solution:**
+1. Verify API key in account settings
+2. Check environment variable: \`BREVO_API_KEY=xkeysib-...\`
+3. Ensure key has proper permissions
+
+\`\`\`javascript
+// Test API key
+const account = await brevo.account({ operation: 'get_account' });
+console.log('API Key valid for:', account.email);
+\`\`\`
+
+## Email Delivery Issues
+
+### Problem: Emails Not Being Delivered
+**Common Causes:**
+- Invalid sender email/domain
+- Content triggers spam filters
+- Recipient email invalid
+- Account sending limits exceeded
+
+**Solution:**
+\`\`\`javascript
+// Check account limits
+const account = await brevo.account({ operation: 'get_account' });
+console.log('Remaining credits:', account.plan[0].credits);
+
+// Verify sender
+const senders = await brevo.account({ operation: 'get_senders' });
+console.log('Verified senders:', senders);
+
+// Check email events for delivery status
+const events = await brevo.email({
+  operation: 'get_events',
+  email: 'recipient@example.com'
+});
+\`\`\`
+
+## Contact Import Issues
+
+### Problem: Bulk Import Failing
+**Common Issues:**
+- Invalid email formats
+- Missing required fields
+- Duplicate contacts
+- CSV encoding problems
+
+**Solution:**
+\`\`\`javascript
+// Validate contacts before import
+function validateContact(contact) {
+  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  if (!emailRegex.test(contact.email)) {
+    throw new Error(\`Invalid email: \${contact.email}\`);
+  }
+  return true;
+}
+
+// Use dry run first
+const dryRun = await brevo.bulk_contact_import({
+  text: contactData,
+  dryRun: true
+});
+console.log('Import preview:', dryRun);
+\`\`\`
+
+## Webhook Issues
+
+### Problem: Webhooks Not Being Received
+**Debugging Steps:**
+1. Check webhook URL accessibility
+2. Verify HTTPS endpoint
+3. Test webhook response time
+4. Check webhook delivery attempts
+
+\`\`\`javascript
+// List webhook delivery attempts
+const attempts = await brevo.webhooks({
+  operation: 'list_webhook_attempts',
+  webhookId: yourWebhookId
+});
+
+console.log('Failed deliveries:', attempts.filter(a => a.status !== 200));
+
+// Test webhook endpoint
+const testWebhook = await fetch('your-webhook-url', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ test: true })
+});
+\`\`\`
+
+## Template Issues
+
+### Problem: Template Variables Not Rendering
+**Common Issues:**
+- Incorrect variable syntax
+- Missing contact attributes
+- Case sensitivity
+
+**Solution:**
+\`\`\`javascript
+// Check available attributes
+const attributes = await brevo.contacts({ operation: 'get_attributes' });
+console.log('Available attributes:', attributes.map(a => a.name));
+
+// Use fallback values
+const template = {
+  subject: "Hello {{contact.FIRSTNAME | default: 'there'}}!",
+  htmlContent: \`
+    <h1>Hi {{contact.FIRSTNAME | default: 'Valued Customer'}}!</h1>
+    <p>Company: {{contact.COMPANY | default: 'N/A'}}</p>
+  \`
+};
+\`\`\`
+
+## Rate Limiting Issues
+
+### Problem: "Too Many Requests" Error
+**Solution:**
+\`\`\`javascript
+async function makeRequest(requestFn, retries = 3) {
+  try {
+    return await requestFn();
+  } catch (error) {
+    if (error.status === 429 && retries > 0) {
+      const delay = Math.pow(2, 4 - retries) * 1000; // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return makeRequest(requestFn, retries - 1);
+    }
+    throw error;
+  }
+}
+\`\`\`
+
+## Campaign Issues
+
+### Problem: Campaign Not Sending
+**Checklist:**
+- [ ] Campaign status is "sent" not "draft"
+- [ ] Contact list has valid contacts
+- [ ] Template is active and valid
+- [ ] Sender email is verified
+- [ ] Account has sufficient credits
+
+\`\`\`javascript
+// Debug campaign
+const campaign = await brevo.campaigns({
+  operation: 'get_email_campaigns',
+  campaignId: yourCampaignId
+});
+
+console.log('Campaign status:', campaign.status);
+console.log('Recipients:', campaign.recipients);
+console.log('Send time:', campaign.scheduledAt);
+\`\`\`
+
+## Contact Attribute Issues
+
+### Problem: Custom Attributes Not Saving
+**Common Issues:**
+- Attribute doesn't exist
+- Wrong data type
+- Reserved attribute names
+
+**Solution:**
+\`\`\`javascript
+// Create custom attribute first
+const newAttribute = await brevo.contacts({
+  operation: 'create_attribute',
+  attributeName: 'CUSTOM_FIELD',
+  attributeData: {
+    type: 'text'
+  }
+});
+
+// Then update contact
+const updatedContact = await brevo.contacts({
+  operation: 'update',
+  identifier: 'user@example.com',
+  contactData: {
+    attributes: {
+      CUSTOM_FIELD: 'value'
+    }
+  }
+});
+\`\`\`
+
+## Getting Help
+
+### Enable Debug Mode
+\`\`\`javascript
+// Add debug logging
+process.env.DEBUG_MODE = 'true';
+
+// Or in code
+const server = new BrevoMCPServer();
+server.debug = true;
+\`\`\`
+
+### Check Brevo Status
+- [Brevo Status Page](https://status.brevo.com)
+- [API Documentation](https://developers.brevo.com)
+- [Support Portal](https://help.brevo.com)
+
+### Log Important Information
+\`\`\`javascript
+console.log('API Key (first 10 chars):', process.env.BREVO_API_KEY?.substring(0, 10));
+console.log('Account info:', await brevo.account({ operation: 'get_account' }));
+console.log('Rate limits:', response.headers);
+\`\`\``
             }]
           };
 
