@@ -2,15 +2,15 @@
   "name": "brevo-mcp",
   "version": "1.0.0",
   "description": "Multi-Channel Platform (MCP) for Brevo API integration with Claude",
-  "main": "build/index.js",
+  "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "brevo-mcp": "build/index.js",
+    "brevo-mcp": "dist/index.js",
     "brevo-mcp-smithery": "scripts/start-smithery.js"
   },
   "scripts": {
-    "build": "tsc && shx chmod +x build/index.js",
-    "start": "node build/index.js",
+    "build": "tsc && shx chmod +x dist/index.js",
+    "start": "node dist/index.js",
     "prepare": "npm run build",
     "dev": "npm run build && npm start",
     "watch": "tsc --watch",
