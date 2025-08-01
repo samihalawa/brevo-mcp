@@ -5,6 +5,10 @@
 
 A comprehensive MCP server that provides Claude with full access to Brevo's marketing automation platform using the official `@getbrevo/brevo` Node.js SDK. Features 8 organized tools covering all major Brevo functionalities.
 
+<a href="https://glama.ai/mcp/servers/@samihalawa/brevo-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@samihalawa/brevo-mcp/badge" alt="Brevo Server MCP server" />
+</a>
+
 ## ✨ Features
 
 - 🔧 **Official Brevo SDK** - Built with `@getbrevo/brevo` for maximum compatibility
