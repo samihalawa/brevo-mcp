@@ -1,9 +1,14 @@
 version: 1
+# LAZY LOADING ENABLED
+# Tool listing is public - NO authentication required to see available tools
+# Authentication credentials are passed during tool execution via tool parameters
+# This improves discoverability in Smithery marketplace while maintaining security
+
 startCommand:
   type: stdio
   configSchema:
     type: object
-    required: ['apiKey']
+    required: []  # Auth credentials passed at execution time, not required for tool listing
     properties:
       apiKey:
         type: string
