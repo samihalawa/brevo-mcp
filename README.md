@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/samihalawa-brevo-mcp-badge.png)](https://mseep.ai/app/samihalawa-brevo-mcp)
+
 # Brevo MCP Server
 [![smithery badge](https://smithery.ai/badge/@samihalawa/brevo-mcp)](https://smithery.ai/server/@samihalawa/brevo-mcp)
 
